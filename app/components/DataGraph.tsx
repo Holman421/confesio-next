@@ -49,7 +49,7 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
   const currentValueDisplayRef = useRef<HTMLDivElement>(null);
   const timeDisplayRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | null>(null);
-  
+
   const [videoDuration, setVideoDuration] = useState(30);
   const [allParsedData, setAllParsedData] = useState<Record<string, DataPoint[]>>({});
   const [categoryAnimationStates, setCategoryAnimationStates] = useState<Record<string, AnimationState>>({});
@@ -106,8 +106,8 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
       const value = Math.max(
         0,
         baseValue +
-          amplitude * Math.sin((time * frequency * Math.PI) / 2) +
-          (Math.random() - 0.5) * noiseFactor
+        amplitude * Math.sin((time * frequency * Math.PI) / 2) +
+        (Math.random() - 0.5) * noiseFactor
       );
 
       data.push({
@@ -164,8 +164,15 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
       ctx.fillText(value.toFixed(0), originX - 10, y);
     }
 
-    // X-axis labels and grid
-    for (let time = 0; time <= duration; time++) {
+    // X-axis labels and grid with dynamic time steps
+    let timeStep = 1; // Default 1 second steps
+    if (duration > 25) {
+      timeStep = 5; // 5 second steps for videos longer than 25 seconds
+    } else if (duration > 10) {
+      timeStep = 2; // 2 second steps for videos longer than 10 seconds
+    }
+
+    for (let time = 0; time <= duration; time += timeStep) {
       const x = originX + graphWidth * (time / duration);
       if (time > 0) {
         ctx.beginPath();
@@ -187,9 +194,9 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
     const canvas = canvasRef.current;
     const currentValueDisplay = currentValueDisplayRef.current;
     const timeDisplay = timeDisplayRef.current;
-    
+
     if (!canvas || !currentValueDisplay || !timeDisplay) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -233,9 +240,9 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
     calculatedOverallMinValue = Math.max(0, calculatedOverallMinValue * 0.9);
 
     // Handle axis animation
-    if (!axisAnimationState || 
-        axisAnimationState.endMin !== calculatedOverallMinValue || 
-        axisAnimationState.endMax !== calculatedOverallMaxValue) {
+    if (!axisAnimationState ||
+      axisAnimationState.endMin !== calculatedOverallMinValue ||
+      axisAnimationState.endMax !== calculatedOverallMaxValue) {
       setAxisAnimationState({
         startTime: performance.now(),
         duration: AXIS_ANIMATION_DURATION,
@@ -254,10 +261,10 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
       const progress = Math.min(1, elapsed / axisAnimationState.duration);
       currentMin = axisAnimationState.startMin + (axisAnimationState.endMin - axisAnimationState.startMin) * progress;
       currentMax = axisAnimationState.startMax + (axisAnimationState.endMax - axisAnimationState.startMax) * progress;
-      
+
       setCurrentOverallMinValue(currentMin);
       setCurrentOverallMaxValue(currentMax);
-      
+
       if (progress >= 1) {
         setAxisAnimationState(null);
       }
@@ -273,10 +280,10 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
         ctx.beginPath();
         ctx.strokeStyle = category.color;
         ctx.lineWidth = 2;
-        
+
         const animation = categoryAnimationStates[categoryId];
         let currentAnimationProgress = 1;
-        
+
         if (animation) {
           const elapsed = performance.now() - animation.startTime;
           currentAnimationProgress = Math.min(1, elapsed / animation.duration);
@@ -288,12 +295,12 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
             });
           }
         }
-        
+
         data.forEach((point, index) => {
           if (point.time <= graphDisplayDuration) {
             const x = originX + (point.time / graphDisplayDuration) * graphWidth;
             let y = originY - ((point.value - currentMin) / (currentMax - currentMin)) * graphHeight;
-            
+
             if (animation) {
               if (animation.type === "appear") {
                 y = originY - (originY - y) * currentAnimationProgress;
@@ -301,7 +308,7 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
                 y = y * (1 - currentAnimationProgress) + originY * currentAnimationProgress;
               }
             }
-            
+
             if (index === 0 || data[index - 1].time > graphDisplayDuration) {
               ctx.moveTo(x, y);
             } else {
@@ -329,7 +336,7 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
       const category = dataCategories.find((cat) => cat.id === categoryId);
       const data = allParsedData[categoryId];
       if (data && category) {
-        const closestPoint = data.reduce((prev, curr) => 
+        const closestPoint = data.reduce((prev, curr) =>
           Math.abs(curr.time - clampedVideoTime) < Math.abs(prev.time - clampedVideoTime) ? curr : prev
         );
         if (closestPoint) {
@@ -391,7 +398,7 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
 
     const rect = canvas.getBoundingClientRect();
     const offsetX = event.clientX - rect.left;
-    
+
     const padding = 45;
     const graphWidth = canvas.width - padding * 2;
     const originX = padding;
@@ -402,7 +409,7 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
       setWasVideoPlayingBeforeDrag(!video.paused);
       video.pause();
       canvas.style.cursor = "grabbing";
-      
+
       // Start animation if not already running
       if (animationFrameRef.current === null) {
         animateGraph();
@@ -417,7 +424,7 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
 
     const rect = canvas.getBoundingClientRect();
     const offsetX = event.clientX - rect.left;
-    
+
     const padding = 45;
     const graphWidth = canvas.width - padding * 2;
     const originX = padding;
@@ -436,7 +443,7 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
   const handleMouseUp = useCallback(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
-    
+
     if (isDraggingLine) {
       setIsDraggingLine(false);
       if (canvas) canvas.style.cursor = "default";
@@ -482,9 +489,9 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
     };
 
     const stopAnimation = () => {
-      if (Object.keys(categoryAnimationStates).length === 0 && 
-          axisAnimationState === null && 
-          !isDraggingLine) {
+      if (Object.keys(categoryAnimationStates).length === 0 &&
+        axisAnimationState === null &&
+        !isDraggingLine) {
         if (animationFrameRef.current !== null) {
           cancelAnimationFrame(animationFrameRef.current);
           animationFrameRef.current = null;
@@ -568,11 +575,11 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
       />
-      <div 
+      <div
         ref={currentValueDisplayRef}
         className="absolute opacity-0 transition-opacity duration-200 pointer-events-none text-sm text-gray-800 leading-relaxed whitespace-nowrap px-3 py-2 bg-white/90 rounded-lg shadow-lg z-20 top-8 left-1/2 transform -translate-x-1/2"
       />
-      <div 
+      <div
         ref={timeDisplayRef}
         className="absolute opacity-0 transition-opacity duration-200 pointer-events-none text-xs text-gray-800 font-medium px-2 py-1 bg-white/90 rounded-md shadow-md z-20 left-1/2 transform -translate-x-1/2"
       />

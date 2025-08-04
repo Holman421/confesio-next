@@ -5,9 +5,13 @@ import LoginForm from './components/LoginForm';
 import VideoPlayer from './components/VideoPlayer';
 import DataGraph from './components/DataGraph';
 import VideoControls from './components/VideoControls';
-import GaugePanel from './components/GaugePanel';
-import ScreenshotHandler from './components/ScreenshotHandler';
-import DataCircle from './components/DataCircle';
+import Navigation from './components/Navigation';
+import TopStatsPanel from './components/TopStatsPanel';
+import BottomPanel from './components/BottomPanel';
+import NeuronsPanel from './components/NeuronsPanel';
+import FinalScorePanel from './components/FinalScorePanel';
+import SatisfactionPanel from './components/SatisfactionPanel';
+import Image from 'next/image';
 
 export default function VideoDataVisualizer() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -33,48 +37,50 @@ export default function VideoDataVisualizer() {
 
   if (!isAuthenticated) {
     return (
-      <LoginForm 
-        loginDisabled={true} 
-        onAuthenticated={handleAuthentication} 
+      <LoginForm
+        loginDisabled={true}
+        onAuthenticated={handleAuthentication}
       />
     );
   }
 
   return (
     <>
-      <div className="font-sans bg-gray-100 min-h-screen">
-        {/* Main App */}
-        <div className="main-content-area flex gap-4 flex-col lg:flex-row items-start justify-center p-5 min-h-screen">
-          <div className="flex flex-col items-center flex-grow max-w-4xl">
-            <div id="video-graph-container" className="w-full">
-              <VideoPlayer ref={videoRef} />
-              <DataGraph 
-                videoRef={videoRef} 
-                activeCategories={activeCategories}
-              />
-            </div>
+      <div className="font-sans h-screen px-48 py-16 flex gap-16">
+        <Image
+          src="/images/background.jpg"
+          alt="Confesio Background"
+          className="fixed top-0 left-0 w-full h-full object-cover z-[-1]"
+          width={1920}
+          height={1080}
+        />
+        <Navigation />
+        <div className='w-full flex flex-col gap-16'>
+          <TopStatsPanel />
+          <div className='w-full flex-1 flex gap-16'>
+            <VideoPlayer ref={videoRef} />
+            <NeuronsPanel />
+            <FinalScorePanel />
           </div>
-
-          <div className="flex flex-col gap-4">
-            <VideoControls 
+          <div className='w-full flex gap-16'>
+            <DataGraph
+              videoRef={videoRef}
+              activeCategories={activeCategories}
+            />
+            <VideoControls
               videoRef={videoRef}
               activeCategories={activeCategories}
               onCategoryToggle={handleCategoryToggle}
             />
-            
-            {/* <GaugePanel 
-              videoRef={videoRef}
-              activeCategories={activeCategories}
-            /> */}
+            <SatisfactionPanel />
 
-            <DataCircle score={9.3} />
           </div>
+          <div className='w-full'>
+            <BottomPanel />
+          </div>
+
         </div>
 
-        <ScreenshotHandler 
-          videoRef={videoRef}
-          activeCategories={activeCategories}
-        />
       </div>
     </>
   );

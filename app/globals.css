@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
 :root {
+  --spacing: 0.0625rem;
+
   --background: #ffffff;
   --foreground: #171717;
+
+}
+
+@theme {
+  --color-panelBackground: #060B28BD;
 }
 
 @theme inline {

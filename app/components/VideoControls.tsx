@@ -44,7 +44,7 @@ export default function VideoControls({ videoRef, activeCategories, onCategoryTo
     video.pause();
     video.currentTime = 0;
     setPlayButtonText('Play');
-    
+
     // Reset all categories to active
     dataCategories.forEach((category) => {
       if (!activeCategories.includes(category.id)) {
@@ -84,7 +84,7 @@ export default function VideoControls({ videoRef, activeCategories, onCategoryTo
   }, [videoRef]);
 
   return (
-    <div className="bg-white rounded-xl shadow-xl p-5 w-full max-w-xs flex flex-col gap-4 mt-5 lg:mt-0 flex-shrink-0">
+    <div className="bg-panelBackground rounded-xl shadow-xl p-5 w-full max-w-xs flex flex-col gap-4 mt-5 lg:mt-0 flex-shrink-0">
       <h2 className="text-xl font-bold text-gray-800 mb-2">Data Categories</h2>
       <div id="categoryCheckboxes" className="flex flex-col gap-3">
         {dataCategories.map((category) => (
