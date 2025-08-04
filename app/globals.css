@@ -24,3 +24,86 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Triangle pointer for info display */
+#currentValueDisplay::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -8px;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 8px solid rgba(255, 255, 255, 0.9);
+  z-index: 21;
+}
+
+/* Add a subtle shadow to the triangle */
+#currentValueDisplay::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -10px;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  border-right: 9px solid rgba(0, 0, 0, 0.1);
+  z-index: 20;
+}
+
+/* Triangle pointer for time display */
+#timeDisplay::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid rgba(255, 255, 255, 0.9);
+  z-index: 21;
+}
+
+/* Add a subtle shadow to the time triangle */
+#timeDisplay::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-bottom: 9px solid rgba(0, 0, 0, 0.1);
+  z-index: 20;
+}
+
+/* Fix for screenshot container to prevent gray areas */
+#video-data-container {
+  box-sizing: border-box;
+  background: #f3f4f6;
+}
+
+/* Ensure data display section doesn't cause layout issues */
+#dataDisplaySection {
+  box-sizing: border-box;
+  width: 100%;
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+#video-graph-container > div:last-child {
+  transition: opacity 0.3s ease-in-out;
+  visibility: visible;
+}
+
+/* Prevent body scrolling during animations */
+body.screenshot-mode {
+  overflow: hidden;
+}
