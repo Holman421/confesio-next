@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback } from "react";
 
 interface DataCategory {
   id: string;
@@ -21,7 +21,12 @@ const dataCategories: DataCategory[] = [
 ];
 
 // Dynamic import for html2canvas-pro
-let html2canvas: ((element: HTMLElement, options?: Html2CanvasOptions) => Promise<HTMLCanvasElement>) | null = null;
+let html2canvas:
+  | ((
+      element: HTMLElement,
+      options?: Html2CanvasOptions
+    ) => Promise<HTMLCanvasElement>)
+  | null = null;
 
 interface Html2CanvasOptions {
   allowTaint?: boolean;
@@ -35,57 +40,72 @@ interface Html2CanvasOptions {
   scrollY?: number;
 }
 
-export default function ScreenshotHandler({ videoRef, activeCategories }: ScreenshotHandlerProps) {
-  
-  const updateDataDisplay = useCallback((currentVideoTime: number) => {
-    const dataValuesGrid = document.getElementById("dataValuesGrid");
-    if (!dataValuesGrid) return;
+export default function ScreenshotHandler({
+  videoRef,
+  activeCategories,
+}: ScreenshotHandlerProps) {
+  const updateDataDisplay = useCallback(
+    (currentVideoTime: number) => {
+      const dataValuesGrid = document.getElementById("dataValuesGrid");
+      if (!dataValuesGrid) return;
 
-    let gridContent = "";
-    activeCategories.forEach((categoryId) => {
-      const category = dataCategories.find(cat => cat.id === categoryId);
-      if (category) {
-        // Generate mock value for display (this should come from actual data)
-        const mockValue = Math.random() * 100;
-        gridContent += `
-          <div class="bg-gray-50 rounded-lg p-4 text-center border-l-4" style="border-left-color: ${category.color};">
-            <div class="text-lg font-bold" style="color: ${category.color};">${mockValue.toFixed(2)}</div>
+      let gridContent = "";
+      activeCategories.forEach((categoryId) => {
+        const category = dataCategories.find((cat) => cat.id === categoryId);
+        if (category) {
+          // Generate mock value for display (this should come from actual data)
+          const mockValue = Math.random() * 100;
+          gridContent += `
+          <div class="bg-gray-50 rounded-lg p-4 text-center border-l-4" style="border-left-color: ${
+            category.color
+          };">
+            <div class="text-lg font-bold" style="color: ${
+              category.color
+            };">${mockValue.toFixed(2)}</div>
             <div class="text-sm text-gray-600">${category.name}</div>
           </div>
         `;
-      }
-    });
-    dataValuesGrid.innerHTML = gridContent;
-  }, [activeCategories]);
+        }
+      });
+      dataValuesGrid.innerHTML = gridContent;
+    },
+    [activeCategories]
+  );
 
-  const showDataDisplay = useCallback(async (currentVideoTime: number) => {
-    const dataDisplaySection = document.getElementById("dataDisplaySection");
-    if (!dataDisplaySection) return;
+  const showDataDisplay = useCallback(
+    async (currentVideoTime: number) => {
+      const dataDisplaySection = document.getElementById("dataDisplaySection");
+      if (!dataDisplaySection) return;
 
-    updateDataDisplay(currentVideoTime);
-    
-    dataDisplaySection.style.display = "block";
-    dataDisplaySection.style.opacity = "0";
-    dataDisplaySection.style.transform = "translateY(-20px)";
-    
-    // Force reflow
-    dataDisplaySection.offsetHeight;
-    
-    dataDisplaySection.style.opacity = "1";
-    dataDisplaySection.style.transform = "translateY(0)";
-    
-    await new Promise(resolve => setTimeout(resolve, 300));
-  }, [updateDataDisplay]);
+      updateDataDisplay(currentVideoTime);
 
-  const showVideoTimeOverlay = useCallback((currentTime: number, duration: number): (() => void) | undefined => {
-    const video = videoRef.current;
-    const videoContainer = document.querySelector('#video-data-container .w-full.rounded-xl') as HTMLElement;
-    if (!video || !videoContainer) return undefined;
+      dataDisplaySection.style.display = "block";
+      dataDisplaySection.style.opacity = "0";
+      dataDisplaySection.style.transform = "translateY(-20px)";
 
-    // Create time overlay element
-    const timeOverlay = document.createElement('div');
-    timeOverlay.id = 'video-time-overlay';
-    timeOverlay.style.cssText = `
+      // Force reflow
+      dataDisplaySection.offsetHeight;
+
+      dataDisplaySection.style.opacity = "1";
+      dataDisplaySection.style.transform = "translateY(0)";
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    },
+    [updateDataDisplay]
+  );
+
+  const showVideoTimeOverlay = useCallback(
+    (currentTime: number, duration: number): (() => void) | undefined => {
+      const video = videoRef.current;
+      const videoContainer = document.querySelector(
+        "#video-data-container .w-full.rounded-xl"
+      ) as HTMLElement;
+      if (!video || !videoContainer) return undefined;
+
+      // Create time overlay element
+      const timeOverlay = document.createElement("div");
+      timeOverlay.id = "video-time-overlay";
+      timeOverlay.style.cssText = `
       position: absolute;
       bottom: 20px;
       left: 50%;
@@ -100,20 +120,24 @@ export default function ScreenshotHandler({ videoRef, activeCategories }: Screen
       z-index: 1000;
       white-space: nowrap;
     `;
-    timeOverlay.textContent = `${currentTime.toFixed(2)}s / ${duration.toFixed(2)}s`;
+      timeOverlay.textContent = `${currentTime.toFixed(
+        2
+      )}s / ${duration.toFixed(2)}s`;
 
-    // Make video container relative positioned
-    const originalPosition = videoContainer.style.position;
-    videoContainer.style.position = 'relative';
-    videoContainer.appendChild(timeOverlay);
+      // Make video container relative positioned
+      const originalPosition = videoContainer.style.position;
+      videoContainer.style.position = "relative";
+      videoContainer.appendChild(timeOverlay);
 
-    return () => {
-      if (timeOverlay.parentNode) {
-        timeOverlay.parentNode.removeChild(timeOverlay);
-      }
-      videoContainer.style.position = originalPosition;
-    };
-  }, [videoRef]);
+      return () => {
+        if (timeOverlay.parentNode) {
+          timeOverlay.parentNode.removeChild(timeOverlay);
+        }
+        videoContainer.style.position = originalPosition;
+      };
+    },
+    [videoRef]
+  );
 
   const hideDataDisplay = useCallback(async () => {
     const dataDisplaySection = document.getElementById("dataDisplaySection");
@@ -121,48 +145,54 @@ export default function ScreenshotHandler({ videoRef, activeCategories }: Screen
 
     dataDisplaySection.style.opacity = "0";
     dataDisplaySection.style.transform = "translateY(-20px)";
-    
-    await new Promise(resolve => setTimeout(resolve, 300));
+
+    await new Promise((resolve) => setTimeout(resolve, 300));
     dataDisplaySection.style.display = "none";
   }, []);
 
   const fadeOutGraph = useCallback(async () => {
-    const graphSection = document.querySelector('#video-graph-container > div:last-child') as HTMLElement;
+    const graphSection = document.querySelector(
+      "#video-graph-container > div:last-child"
+    ) as HTMLElement;
     if (!graphSection) return;
 
     graphSection.style.transition = "opacity 0.3s ease-in-out";
     graphSection.style.opacity = "0";
     graphSection.style.pointerEvents = "none";
-    
-    await new Promise(resolve => setTimeout(resolve, 300));
+
+    await new Promise((resolve) => setTimeout(resolve, 300));
   }, []);
 
   const fadeInGraph = useCallback(async () => {
-    const graphSection = document.querySelector('#video-graph-container > div:last-child') as HTMLElement;
+    const graphSection = document.querySelector(
+      "#video-graph-container > div:last-child"
+    ) as HTMLElement;
     if (!graphSection) return;
 
     graphSection.style.opacity = "1";
     graphSection.style.pointerEvents = "auto";
-    
-    await new Promise(resolve => setTimeout(resolve, 300));
+
+    await new Promise((resolve) => setTimeout(resolve, 300));
   }, []);
 
   const takeScreenshot = useCallback(async () => {
     if (!html2canvas) {
-      alert("Screenshot library is still loading. Please try again in a moment.");
+      alert(
+        "Screenshot library is still loading. Please try again in a moment."
+      );
       return;
     }
 
     try {
       const video = videoRef.current;
       const screenshotPanel = document.getElementById("screenshot-panel");
-      
+
       if (!video || !screenshotPanel) {
         throw new Error("Required elements not found");
       }
 
-      document.body.classList.add('screenshot-mode');
-      
+      document.body.classList.add("screenshot-mode");
+
       // Optionally, you can still fade out/in graph or show/hide overlays if needed
       // await fadeOutGraph();
       // await showDataDisplay(video.currentTime);
@@ -171,26 +201,26 @@ export default function ScreenshotHandler({ videoRef, activeCategories }: Screen
       // const removeTimeOverlay = showVideoTimeOverlay(video.currentTime, video.duration);
 
       // Remove border radius for clean screenshot if needed
-      const originalRadius = screenshotPanel.style.borderRadius || '';
-      const originalBg = screenshotPanel.style.backgroundColor || '';
-      const originalTransition = screenshotPanel.style.transition || '';
-      screenshotPanel.style.borderRadius = '0';
-      screenshotPanel.style.transition = 'background-color 0.3s';
-      screenshotPanel.style.backgroundColor = '#000';
+      const originalRadius = screenshotPanel.style.borderRadius || "";
+      const originalBg = screenshotPanel.style.backgroundColor || "";
+      const originalTransition = screenshotPanel.style.transition || "";
+      screenshotPanel.style.borderRadius = "0";
+      screenshotPanel.style.transition = "background-color 0.3s";
+      screenshotPanel.style.backgroundColor = "#000";
 
       // Wait for the transition to finish (300ms)
-      await new Promise(resolve => setTimeout(resolve, 320));
+      await new Promise((resolve) => setTimeout(resolve, 320));
 
       const canvas = await html2canvas(screenshotPanel, {
         allowTaint: true,
         useCORS: true,
         scale: 1,
-        backgroundColor: '#000000',
+        backgroundColor: "#000000",
         logging: false,
         width: screenshotPanel.offsetWidth,
         height: screenshotPanel.offsetHeight,
         scrollX: 0,
-        scrollY: 0
+        scrollY: 0,
       });
 
       // Animate back to original background
@@ -199,9 +229,9 @@ export default function ScreenshotHandler({ videoRef, activeCategories }: Screen
       screenshotPanel.style.borderRadius = originalRadius;
 
       // Wait for the transition back (if any)
-      await new Promise(resolve => setTimeout(resolve, 320));
+      await new Promise((resolve) => setTimeout(resolve, 320));
 
-      document.body.classList.remove('screenshot-mode');
+      document.body.classList.remove("screenshot-mode");
 
       canvas.toBlob((blob: Blob | null) => {
         if (!blob) {
@@ -219,17 +249,18 @@ export default function ScreenshotHandler({ videoRef, activeCategories }: Screen
       });
     } catch (error: unknown) {
       console.error("Screenshot failed:", error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       alert(`Screenshot failed: ${errorMessage}`);
-      document.body.classList.remove('screenshot-mode');
+      document.body.classList.remove("screenshot-mode");
     }
-  }, [videoRef, fadeOutGraph, fadeInGraph, showDataDisplay, hideDataDisplay, showVideoTimeOverlay]);
+  }, [videoRef]);
 
   useEffect(() => {
     // Load html2canvas-pro dynamically
     const loadHtml2Canvas = async () => {
       try {
-        const module = await import('html2canvas-pro');
+        const module = await import("html2canvas-pro");
         html2canvas = module.default || module;
       } catch (error) {
         console.error("Failed to load html2canvas-pro:", error);
@@ -243,10 +274,10 @@ export default function ScreenshotHandler({ videoRef, activeCategories }: Screen
       takeScreenshot();
     };
 
-    window.addEventListener('take-screenshot', handleScreenshotEvent);
+    window.addEventListener("take-screenshot", handleScreenshotEvent);
 
     return () => {
-      window.removeEventListener('take-screenshot', handleScreenshotEvent);
+      window.removeEventListener("take-screenshot", handleScreenshotEvent);
     };
   }, [takeScreenshot]);
 

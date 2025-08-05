@@ -41,7 +41,6 @@ const dataCategories: DataCategory[] = [
   { id: "impressions", name: "TEMP", color: "#3b82f6" },
   { id: "clicks", name: "EEG", color: "#10b981" },
   { id: "conversions", name: "GSR", color: "#ef4444" },
-  { id: "engagement", name: "RSP", color: "#f59e0b" },
 ];
 
 const AXIS_ANIMATION_DURATION = 500;

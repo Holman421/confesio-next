@@ -21,7 +21,6 @@ const dataCategories: DataCategory[] = [
   { id: "impressions", name: "TEMP Skin Temperature", color: "#3b82f6" },
   { id: "clicks", name: "EEG Brain Activity", color: "#10b981" },
   { id: "conversions", name: "GSR Skin Conductance", color: "#ef4444" },
-  { id: "engagement", name: "RSP Respiration", color: "#f59e0b" },
 ];
 
 export default function VideoControls({
