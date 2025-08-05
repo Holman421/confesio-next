@@ -41,6 +41,7 @@ const initialGauges = [
 
 const SatisfactionPanel: React.FC<SatisfactionPanelProps> = ({ isPlaying }) => {
   const [gauges, setGauges] = useState(initialGauges);
+  const [hasAnimated, setHasAnimated] = useState(Array(initialGauges.length).fill(false));
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -48,22 +49,22 @@ const SatisfactionPanel: React.FC<SatisfactionPanelProps> = ({ isPlaying }) => {
       intervalRef.current = setInterval(() => {
         setGauges((prev) =>
           prev.map((g, i) => {
+            if (!hasAnimated[i]) return g; // Don't update until initial animation is done
             // Randomly increase or decrease value (larger delta)
-            const delta = (Math.random() - 0.5) * 0.15; // -0.075 to +0.075
+            const delta = (Math.random() - 0.5) * 0.40;
             const newValue = Math.max(
               0,
               Math.min(1, parseFloat(g.value.toString()) + delta)
             );
             let displayValue: string;
             if (g.label === "Engagement") {
-              // Engagement display value is large
               const base = parseFloat(g.displayValue);
-              const d = (Math.random() - 0.5) * 15; // -7.5 to +7.5
+              const d = (Math.random() - 0.5) * 15;
               const newDisplay = Math.max(100, base + d).toFixed(1);
               displayValue = newDisplay;
             } else {
               const base = parseFloat(g.displayValue);
-              const d = (Math.random() - 0.5) * 0.7; // -0.35 to +0.35
+              const d = (Math.random() - 0.5) * 0.7;
               const newDisplay = Math.max(0, base + d).toFixed(1);
               displayValue = newDisplay;
             }
@@ -85,7 +86,17 @@ const SatisfactionPanel: React.FC<SatisfactionPanelProps> = ({ isPlaying }) => {
         intervalRef.current = null;
       }
     };
-  }, [isPlaying]);
+  }, [isPlaying, hasAnimated]);
+
+  // Callback for CustomGaugeScore to notify when initial animation is done
+  const handleGaugeAnimated = (idx: number) => {
+    setHasAnimated((prev) => {
+      if (prev[idx]) return prev;
+      const next = [...prev];
+      next[idx] = true;
+      return next;
+    });
+  };
 
   // Animated values for SatisfactionBlocks
   const [eeg, setEeg] = useState(145);
@@ -133,7 +144,7 @@ const SatisfactionPanel: React.FC<SatisfactionPanelProps> = ({ isPlaying }) => {
         </div>
       </div>
       <div className="flex items-center w-full justify-between my-8">
-        {gauges.map((g) => (
+        {gauges.map((g, i) => (
           <CustomGaugeScore
             key={g.label}
             value={g.value}
@@ -143,6 +154,7 @@ const SatisfactionPanel: React.FC<SatisfactionPanelProps> = ({ isPlaying }) => {
             displayValue={g.displayValue}
             strokeWidth={5}
             version="small"
+            onInitialAnimationEnd={() => handleGaugeAnimated(i)}
           />
         ))}
       </div>

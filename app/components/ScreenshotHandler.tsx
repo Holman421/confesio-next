@@ -239,13 +239,21 @@ export default function ScreenshotHandler({
           return;
         }
         const url = URL.createObjectURL(blob);
+        // Open screenshot in a new window/tab
+        window.open(url, '_blank');
+
+        // Download as before
         const a = document.createElement("a");
         a.href = url;
         a.download = `screenshot-panel-${video.currentTime.toFixed(2)}s.png`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+
+        // Optionally, you may want to delay revoking the object URL to ensure the new window loads the image
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 1000);
       });
     } catch (error: unknown) {
       console.error("Screenshot failed:", error);

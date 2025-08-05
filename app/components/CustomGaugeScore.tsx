@@ -11,6 +11,7 @@ interface CustomGaugeScoreProps {
   label?: string;
   displayValue?: string;
   version?: "small" | "large";
+  onInitialAnimationEnd?: () => void;
 }
 
 export default function CustomGaugeScore({
@@ -21,9 +22,11 @@ export default function CustomGaugeScore({
   label = "",
   displayValue = "",
   version = "large",
+  onInitialAnimationEnd,
 }: CustomGaugeScoreProps) {
   const [animatedValue, setAnimatedValue] = useState(0);
   const gsapRef = useRef<gsap.core.Tween | null>(null);
+  const prevValue = useRef(value);
   const firstLoad = useRef(true);
 
   useEffect(() => {
@@ -31,6 +34,7 @@ export default function CustomGaugeScore({
       if (gsapRef.current) {
         gsapRef.current.kill();
       }
+      // Start animation immediately on mount
       gsapRef.current = gsap.to(
         { val: 0 },
         {
@@ -43,12 +47,11 @@ export default function CustomGaugeScore({
           onComplete: () => {
             setAnimatedValue(value);
             firstLoad.current = false;
+            if (onInitialAnimationEnd) onInitialAnimationEnd();
           },
         }
       );
-      return () => {
-        if (gsapRef.current) gsapRef.current.kill();
-      };
+      // No return cleanup needed on first mount
     } else {
       setAnimatedValue(value);
     }
@@ -89,7 +92,7 @@ export default function CustomGaugeScore({
             strokeDashoffset={strokeDashoffset}
             style={
               !firstLoad.current
-                ? { transition: "stroke-dashoffset 1.5s ease-in-out" }
+                ? { transition: "stroke-dashoffset 1.3s ease-in-out" }
                 : undefined
             }
           />
