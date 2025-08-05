@@ -757,23 +757,35 @@ export default function DataGraph({
         id="screenshot-visible"
         className="absolute pointer-events-none top-0 w-full left-0 p-24 flex justify-between items-center opacity-0 transition-opacity"
       >
-        {dataCategories.map((cat) => {
-          const data = allParsedData[cat.id];
-          let value = "";
-          if (data && videoRef.current) {
-            const video = videoRef.current;
-            const currentTime = video.currentTime;
-            const closestPoint = data.reduce((prev, curr) =>
-              Math.abs(curr.time - currentTime) < Math.abs(prev.time - currentTime) ? curr : prev
-            );
-            value = closestPoint ? closestPoint.value.toFixed(2) : "";
+        {/* Show current time next to values */}
+        {(() => {
+          let currentTime = 0;
+          if (videoRef.current) {
+            currentTime = videoRef.current.currentTime;
           }
           return (
-            <p key={cat.id} style={{ color: cat.color, fontWeight: 500 }}>
-              {cat.name}: {value}
-            </p>
+            <>
+              {dataCategories.map((cat) => {
+                const data = allParsedData[cat.id];
+                let value = "";
+                if (data && videoRef.current) {
+                  const closestPoint = data.reduce((prev, curr) =>
+                    Math.abs(curr.time - currentTime) < Math.abs(prev.time - currentTime) ? curr : prev
+                  );
+                  value = closestPoint ? closestPoint.value.toFixed(2) : "";
+                }
+                return (
+                  <p key={cat.id} style={{ color: cat.color, fontWeight: 500 }}>
+                    {cat.name}: {value}
+                  </p>
+                );
+              })}
+              <span style={{ color: '#fff', fontWeight: 500, marginLeft: 16 }}>
+                Time: {currentTime.toFixed(2)}s
+              </span>
+            </>
           );
-        })}
+        })()}
       </div>
       <canvas
         ref={canvasRef}
