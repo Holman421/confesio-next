@@ -98,13 +98,27 @@ export default function DataGraph({
       switch (categoryId) {
         case "impressions":
           baseValue = 500;
-          amplitude = 400;
-          frequency = 0.5;
-          noiseFactor = 50;
-
           amplitude = 50;
           frequency = 1;
           noiseFactor = 10;
+          break;
+        case "clicks":
+          baseValue = 300;
+          amplitude = 30;
+          frequency = 0.7;
+          noiseFactor = 8;
+          break;
+        case "conversions":
+          baseValue = 150;
+          amplitude = 20;
+          frequency = 0.4;
+          noiseFactor = 5;
+          break;
+        default:
+          baseValue = 0;
+          amplitude = 0;
+          frequency = 0;
+          noiseFactor = 0;
       }
 
       for (let i = 0; i < totalPoints; i++) {
@@ -221,11 +235,12 @@ export default function DataGraph({
       // Set canvas size
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
+      canvas.style.zIndex = "2";
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // Set graph background color
+      // Set graph background color (transparent)
       ctx.save();
       ctx.globalCompositeOperation = "source-over";
-      ctx.fillStyle = "#060B28";
+      ctx.fillStyle = "transparent";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
 
@@ -401,7 +416,7 @@ export default function DataGraph({
 
       if (displayContent) {
         currentValueDisplay.innerHTML = displayContent;
-        const finalX = lineX + 105;
+        const finalX = lineX + 70;
         const canvasRelativeY = padding + 70;
         currentValueDisplay.style.position = "absolute";
         currentValueDisplay.style.left = `${finalX}px`;
@@ -724,7 +739,10 @@ export default function DataGraph({
 
   return (
     <div className="relative w-full bg-panelBackground rounded-xl shadow-xl px-12 py-10">
-      <div className="w-full flex flex-row justify-between items-center mb-4">
+      <div
+        id="screenshot-hide"
+        className="w-full flex flex-row justify-between items-center mb-4"
+      >
         <h3 className="text-[14px] font-bold text-white pl-12">
           Video Data Trends
         </h3>
@@ -734,6 +752,28 @@ export default function DataGraph({
         >
           Screenshot
         </button>
+      </div>
+      <div
+        id="screenshot-visible"
+        className="absolute pointer-events-none top-0 w-full left-0 p-24 flex justify-between items-center opacity-0 transition-opacity"
+      >
+        {dataCategories.map((cat) => {
+          const data = allParsedData[cat.id];
+          let value = "";
+          if (data && videoRef.current) {
+            const video = videoRef.current;
+            const currentTime = video.currentTime;
+            const closestPoint = data.reduce((prev, curr) =>
+              Math.abs(curr.time - currentTime) < Math.abs(prev.time - currentTime) ? curr : prev
+            );
+            value = closestPoint ? closestPoint.value.toFixed(2) : "";
+          }
+          return (
+            <p key={cat.id} style={{ color: cat.color, fontWeight: 500 }}>
+              {cat.name}: {value}
+            </p>
+          );
+        })}
       </div>
       <canvas
         ref={canvasRef}
@@ -756,7 +796,7 @@ export default function DataGraph({
           alt="Description of image"
           width={1000}
           height={1000}
-          className={`w-full h-auto absolute object-cover scale-x-[0.835] origin-left transition-opacity duration-200 ${
+          className={`w-full h-auto absolute object-cover z-[0] pointer-events-none scale-x-[0.835] origin-left transition-opacity duration-200 ${
             visibleVectors.vector1 ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -765,7 +805,7 @@ export default function DataGraph({
           alt="Description of image"
           width={1000}
           height={1000}
-          className={`w-full h-auto absolute object-cover scale-x-[0.835] origin-left transition-opacity duration-200 ${
+          className={`w-full h-auto absolute object-cover z-[0] pointer-events-none scale-x-[0.835] origin-left transition-opacity duration-200 ${
             visibleVectors.vector2 ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -774,7 +814,7 @@ export default function DataGraph({
           alt="Description of image"
           width={1000}
           height={1000}
-          className={`w-full h-auto absolute object-cover scale-x-[0.835] origin-left transition-opacity duration-200 ${
+          className={`w-full h-auto absolute object-cover z-[0] pointer-events-none scale-x-[0.835] origin-left transition-opacity duration-200 ${
             visibleVectors.vector3 ? "opacity-100" : "opacity-0"
           }`}
         />

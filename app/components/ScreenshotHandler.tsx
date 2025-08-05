@@ -186,19 +186,24 @@ export default function ScreenshotHandler({
     try {
       const video = videoRef.current;
       const screenshotPanel = document.getElementById("screenshot-panel");
+      const hideEl = document.getElementById("screenshot-hide");
+      const visibleEl = document.getElementById("screenshot-visible");
 
-      if (!video || !screenshotPanel) {
+      if (!video || !screenshotPanel || !hideEl || !visibleEl) {
         throw new Error("Required elements not found");
       }
 
       document.body.classList.add("screenshot-mode");
 
-      // Optionally, you can still fade out/in graph or show/hide overlays if needed
-      // await fadeOutGraph();
-      // await showDataDisplay(video.currentTime);
-
-      // Optionally, show video time overlay if you want it in the screenshot
-      // const removeTimeOverlay = showVideoTimeOverlay(video.currentTime, video.duration);
+      // Animate hide/show for screenshot-hide and screenshot-visible
+      const originalHideOpacity = hideEl.style.opacity;
+      const originalVisibleOpacity = visibleEl.style.opacity;
+      const originalHideTransition = hideEl.style.transition;
+      const originalVisibleTransition = visibleEl.style.transition;
+      hideEl.style.transition = "opacity 0.3s";
+      visibleEl.style.transition = "opacity 0.3s";
+      hideEl.style.opacity = "0";
+      visibleEl.style.opacity = "1";
 
       // Remove border radius for clean screenshot if needed
       const originalRadius = screenshotPanel.style.borderRadius || "";
@@ -208,7 +213,7 @@ export default function ScreenshotHandler({
       screenshotPanel.style.transition = "background-color 0.3s";
       screenshotPanel.style.backgroundColor = "#000";
 
-      // Wait for the transition to finish (300ms)
+      // Wait for the transitions to finish (320ms)
       await new Promise((resolve) => setTimeout(resolve, 320));
 
       const canvas = await html2canvas(screenshotPanel, {
@@ -223,10 +228,14 @@ export default function ScreenshotHandler({
         scrollY: 0,
       });
 
-      // Animate back to original background
+      // Animate back to original background and revert hide/show
       screenshotPanel.style.backgroundColor = originalBg;
       screenshotPanel.style.transition = originalTransition;
       screenshotPanel.style.borderRadius = originalRadius;
+      hideEl.style.opacity = originalHideOpacity;
+      visibleEl.style.opacity = originalVisibleOpacity;
+      hideEl.style.transition = originalHideTransition;
+      visibleEl.style.transition = originalVisibleTransition;
 
       // Wait for the transition back (if any)
       await new Promise((resolve) => setTimeout(resolve, 320));

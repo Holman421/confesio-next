@@ -39,10 +39,26 @@ const initialGauges = [
   },
 ];
 
+
+const zeroGauges = initialGauges.map(g => ({
+  ...g,
+  value: 0,
+  displayValue: g.label === "Engagement" ? "0.0" : "0.0"
+}));
+
 const SatisfactionPanel: React.FC<SatisfactionPanelProps> = ({ isPlaying }) => {
-  const [gauges, setGauges] = useState(initialGauges);
+  const [gauges, setGauges] = useState(zeroGauges);
   const [hasAnimated, setHasAnimated] = useState(Array(initialGauges.length).fill(false));
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Reset gauges to zero when not playing, restore to initialGauges when playing starts
+  useEffect(() => {
+    if (!isPlaying) {
+      setGauges(zeroGauges);
+      setHasAnimated(Array(initialGauges.length).fill(false));
+    } else {
+      setGauges(initialGauges);
+    }
+  }, [isPlaying]);
 
   useEffect(() => {
     if (isPlaying) {
