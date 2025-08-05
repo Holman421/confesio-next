@@ -15,12 +15,14 @@ interface VideoControlsProps {
   onCategoryToggle: (categoryId: string, active: boolean) => void;
   onPlay?: () => void;
   onPause?: () => void;
+  onChangeVectorVisibility: (vectorId: string, visible: boolean) => void;
+  vectors: Record<string, boolean>;
 }
 
 const dataCategories: DataCategory[] = [
-  { id: "impressions", name: "TEMP Skin Temperature", color: "#3b82f6" },
-  { id: "clicks", name: "EEG Brain Activity", color: "#10b981" },
-  { id: "conversions", name: "GSR Skin Conductance", color: "#ef4444" },
+  { id: "vector1", name: "TEMP Skin Temperature", color: "#3b82f6" },
+  { id: "vector2", name: "EEG Brain Activity", color: "#10b981" },
+  { id: "vector3", name: "GSR Skin Conductance", color: "#ef4444" },
 ];
 
 export default function VideoControls({
@@ -29,12 +31,18 @@ export default function VideoControls({
   onCategoryToggle,
   onPlay,
   onPause,
+  onChangeVectorVisibility,
+  vectors
 }: VideoControlsProps) {
   React.useEffect(() => {
     const video = videoRef?.current;
     if (!video) return;
-    const handlePlay = () => { if (onPlay) onPlay(); };
-    const handlePause = () => { if (onPause) onPause(); };
+    const handlePlay = () => {
+      if (onPlay) onPlay();
+    };
+    const handlePause = () => {
+      if (onPause) onPause();
+    };
     video.addEventListener("play", handlePlay);
     video.addEventListener("pause", handlePause);
     return () => {
@@ -58,7 +66,7 @@ export default function VideoControls({
         </div>
       </div>
       <div id="categoryCheckboxes" className="flex flex-col gap-16">
-        {dataCategories.map((category) => (
+        {dataCategories.map((category, index) => (
           <div
             key={category.id}
             className="flex items-center gap-3 cursor-pointer text-base text-gray-800"
@@ -71,16 +79,16 @@ export default function VideoControls({
                 type="checkbox"
                 id={`category-${category.id}`}
                 value={category.id}
-                checked={activeCategories.includes(category.id)}
-                onChange={(e) =>
-                  handleCategoryChange(category.id, e.target.checked)
-                }
+                checked={vectors[category.id] || false}
+                onChange={(e) => {
+                  onChangeVectorVisibility(category.id, e.target.checked);
+                }}
                 className="sr-only peer"
               />
               <span
                 className={`relative w-24 h-14 flex items-center rounded-full transition-colors duration-300
                   ${
-                    activeCategories.includes(category.id)
+                    vectors[category.id]
                       ? "bg-[#582CFF]"
                       : "bg-black"
                   }
@@ -89,7 +97,7 @@ export default function VideoControls({
                 <span
                   className={`absolute left-2 top-2 w-10 h-10 bg-white rounded-full transition-all duration-300
                     ${
-                      activeCategories.includes(category.id)
+                      vectors[category.id]
                         ? "translate-x-12"
                         : "translate-x-0"
                     }

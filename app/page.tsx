@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback, useEffect } from "react";
 import LoginForm from "./components/LoginForm";
 import ScreenshotHandler from "./components/ScreenshotHandler";
 import VideoPlayer from "./components/VideoPlayer";
@@ -23,6 +23,29 @@ export default function VideoDataVisualizer() {
     "conversions",
     "engagement",
   ]);
+
+  const [visibleVectors, setVisibleVectors] = useState<Record<string, boolean>>(
+    {
+      vector1: true,
+      vector2: true,
+      vector3: true,
+    }
+  );
+
+  const handleVectorVisibilityChange = useCallback(
+    (vectorId: string, visible: boolean) => {
+      setVisibleVectors((prev) => ({
+        ...prev,
+        [vectorId]: visible,
+      }));
+    },
+    []
+  );
+
+  useEffect(() => {
+    // Handle vector visibility changes
+    console.log("[page.tsx] Vector visibility changed:", visibleVectors);
+  }, [visibleVectors]);
 
   const handleAuthentication = () => {
     setIsAuthenticated(true);
@@ -59,7 +82,10 @@ export default function VideoDataVisualizer() {
 
   return (
     <>
-      <ScreenshotHandler videoRef={videoRef} activeCategories={activeCategories} />
+      <ScreenshotHandler
+        videoRef={videoRef}
+        activeCategories={activeCategories}
+      />
       <div className="font-sans h-screen px-48 py-16 flex gap-16">
         <Image
           src="/images/background.jpg"
@@ -78,6 +104,7 @@ export default function VideoDataVisualizer() {
                 videoRef={videoRef}
                 activeCategories={activeCategories}
                 onCategoryToggle={handleCategoryToggle}
+                visibleVectors={visibleVectors}
               />
             </div>
             <div className="flex flex-col gap-16 flex-12">
@@ -92,6 +119,8 @@ export default function VideoDataVisualizer() {
                   onCategoryToggle={handleCategoryToggle}
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
+                  onChangeVectorVisibility={handleVectorVisibilityChange}
+                  vectors={visibleVectors}
                 />
                 <SatisfactionPanel isPlaying={isPlaying} />
               </div>

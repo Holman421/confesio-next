@@ -35,6 +35,9 @@ interface DataGraphProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   activeCategories: string[];
   onCategoryToggle?: (categoryId: string, active: boolean) => void;
+  categoryImages?: Record<string, boolean>;
+  vectorImg?: any;
+  visibleVectors: Record<string, boolean>;
 }
 
 const dataCategories: DataCategory[] = [
@@ -52,6 +55,9 @@ const DRAW_DATA_VALUE_ROWS = false;
 export default function DataGraph({
   videoRef,
   activeCategories,
+  categoryImages = {},
+  vectorImg,
+  visibleVectors,
 }: DataGraphProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const currentValueDisplayRef = useRef<HTMLDivElement>(null);
@@ -95,27 +101,7 @@ export default function DataGraph({
           amplitude = 400;
           frequency = 0.5;
           noiseFactor = 50;
-          break;
-        case "clicks":
-          baseValue = 50;
-          amplitude = 40;
-          frequency = 1.0;
-          noiseFactor = 10;
-          break;
-        case "conversions":
-          baseValue = 5;
-          amplitude = 4;
-          frequency = 0.2;
-          noiseFactor = 2;
-          break;
-        case "engagement":
-          baseValue = 100;
-          amplitude = 80;
-          frequency = 0.7;
-          noiseFactor = 20;
-          break;
-        default:
-          baseValue = 100;
+
           amplitude = 50;
           frequency = 1;
           noiseFactor = 10;
@@ -367,7 +353,10 @@ export default function DataGraph({
                   }
                 }
 
-                if (index === 0 || data[index - 1].time > graphDisplayDuration) {
+                if (
+                  index === 0 ||
+                  data[index - 1].time > graphDisplayDuration
+                ) {
                   ctx.moveTo(x, y);
                 } else {
                   ctx.lineTo(x, y);
@@ -767,21 +756,27 @@ export default function DataGraph({
           alt="Description of image"
           width={1000}
           height={1000}
-          className="w-full h-auto absolute object-cover scale-x-[0.835] origin-left"
+          className={`w-full h-auto absolute object-cover scale-x-[0.835] origin-left transition-opacity duration-200 ${
+            visibleVectors.vector1 ? "opacity-100" : "opacity-0"
+          }`}
         />
         <Image
           src="/images/vector-2.png"
           alt="Description of image"
           width={1000}
           height={1000}
-          className="w-full h-auto absolute object-cover scale-x-[0.835] origin-left"
+          className={`w-full h-auto absolute object-cover scale-x-[0.835] origin-left transition-opacity duration-200 ${
+            visibleVectors.vector2 ? "opacity-100" : "opacity-0"
+          }`}
         />
         <Image
           src="/images/vector-3.png"
           alt="Description of image"
           width={1000}
           height={1000}
-          className="w-full h-auto absolute object-cover scale-x-[0.835] origin-left"
+          className={`w-full h-auto absolute object-cover scale-x-[0.835] origin-left transition-opacity duration-200 ${
+            visibleVectors.vector3 ? "opacity-100" : "opacity-0"
+          }`}
         />
       </div>
     </div>
