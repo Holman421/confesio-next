@@ -1,6 +1,8 @@
-'use client';
+"use client";
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from "react";
+
+// ... (interfaces remain the same) ...
 
 interface DataPoint {
   time: number;
@@ -16,7 +18,7 @@ interface DataCategory {
 interface AnimationState {
   startTime: number;
   duration: number;
-  type: 'appear' | 'disappear';
+  type: "appear" | "disappear";
 }
 
 interface AxisAnimationState {
@@ -44,325 +46,407 @@ const dataCategories: DataCategory[] = [
 const AXIS_ANIMATION_DURATION = 500;
 const LINE_DRAG_HIT_AREA_PX = 10;
 
-export default function DataGraph({ videoRef, activeCategories }: DataGraphProps) {
+export default function DataGraph({
+  videoRef,
+  activeCategories,
+}: DataGraphProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const currentValueDisplayRef = useRef<HTMLDivElement>(null);
   const timeDisplayRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const prevActiveCategoriesRef = useRef<string[]>([]);
 
   const [videoDuration, setVideoDuration] = useState(30);
-  const [allParsedData, setAllParsedData] = useState<Record<string, DataPoint[]>>({});
-  const [categoryAnimationStates, setCategoryAnimationStates] = useState<Record<string, AnimationState>>({});
+  const [allParsedData, setAllParsedData] = useState<
+    Record<string, DataPoint[]>
+  >({});
+  const [categoryAnimationStates, setCategoryAnimationStates] = useState<
+    Record<string, AnimationState>
+  >({});
   const categoryAnimationStatesRef = useRef(categoryAnimationStates);
   useEffect(() => {
     categoryAnimationStatesRef.current = categoryAnimationStates;
   }, [categoryAnimationStates]);
   const [currentOverallMinValue, setCurrentOverallMinValue] = useState(0);
   const [currentOverallMaxValue, setCurrentOverallMaxValue] = useState(1000);
-  const [axisAnimationState, setAxisAnimationState] = useState<AxisAnimationState | null>(null);
+  const [axisAnimationState, setAxisAnimationState] =
+    useState<AxisAnimationState | null>(null);
   const [isDraggingLine, setIsDraggingLine] = useState(false);
-  const [wasVideoPlayingBeforeDrag, setWasVideoPlayingBeforeDrag] = useState(false);
+  const [wasVideoPlayingBeforeDrag, setWasVideoPlayingBeforeDrag] =
+    useState(false);
 
-  const generateMockData = useCallback((categoryId: string, duration: number): DataPoint[] => {
-    const data: DataPoint[] = [];
-    const pointsPerSecond = 10;
-    const totalPoints = Math.ceil(duration * pointsPerSecond) + 1;
+  const generateMockData = useCallback(
+    (categoryId: string, duration: number): DataPoint[] => {
+      const data: DataPoint[] = [];
+      const pointsPerSecond = 10;
+      const totalPoints = Math.ceil(duration * pointsPerSecond) + 1;
 
-    let baseValue = 0;
-    let amplitude = 0;
-    let frequency = 0;
-    let noiseFactor = 0;
+      let baseValue = 0;
+      let amplitude = 0;
+      let frequency = 0;
+      let noiseFactor = 0;
 
-    switch (categoryId) {
-      case "impressions":
-        baseValue = 500;
-        amplitude = 400;
-        frequency = 0.5;
-        noiseFactor = 50;
-        break;
-      case "clicks":
-        baseValue = 50;
-        amplitude = 40;
-        frequency = 1.0;
-        noiseFactor = 10;
-        break;
-      case "conversions":
-        baseValue = 5;
-        amplitude = 4;
-        frequency = 0.2;
-        noiseFactor = 2;
-        break;
-      case "engagement":
-        baseValue = 100;
-        amplitude = 80;
-        frequency = 0.7;
-        noiseFactor = 20;
-        break;
-      default:
-        baseValue = 100;
-        amplitude = 50;
-        frequency = 1;
-        noiseFactor = 10;
-    }
-
-    for (let i = 0; i < totalPoints; i++) {
-      const time = Math.min(i / pointsPerSecond, duration);
-      const value = Math.max(
-        0,
-        baseValue +
-        amplitude * Math.sin((time * frequency * Math.PI) / 2) +
-        (Math.random() - 0.5) * noiseFactor
-      );
-
-      data.push({
-        time: parseFloat(time.toFixed(2)),
-        value: parseFloat(value.toFixed(2)),
-      });
-
-      if (time >= duration) break;
-    }
-    return data;
-  }, []);
-
-  const drawAxes = useCallback((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, duration: number, minValue: number, maxValue: number) => {
-    const padding = 45;
-    const bottomPadding = 65;
-    const graphWidth = canvas.width - padding * 2;
-    const graphHeight = canvas.height - padding - bottomPadding;
-    const originX = padding;
-    const originY = canvas.height - bottomPadding;
-
-    ctx.strokeStyle = "#6b7280";
-    ctx.lineWidth = 1;
-    ctx.font = "14px Inter, sans-serif";
-    ctx.fillStyle = "#4b5563";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    // Y-axis
-    ctx.beginPath();
-    ctx.moveTo(originX, padding);
-    ctx.lineTo(originX, originY);
-    ctx.stroke();
-
-    // X-axis
-    ctx.beginPath();
-    ctx.moveTo(originX, originY);
-    ctx.lineTo(originX + graphWidth, originY);
-    ctx.stroke();
-
-    // Y-axis labels and grid
-    const numYLabels = 5;
-    for (let i = 0; i <= numYLabels; i++) {
-      const value = minValue + (maxValue - minValue) * (i / numYLabels);
-      const y = originY - graphHeight * (i / numYLabels);
-      ctx.beginPath();
-      ctx.strokeStyle = "#e5e7eb";
-      ctx.setLineDash([4, 4]);
-      ctx.moveTo(originX, y);
-      ctx.lineTo(originX + graphWidth, y);
-      ctx.stroke();
-      ctx.fillStyle = "#4b5563";
-      ctx.textAlign = "right";
-      ctx.textBaseline = "middle";
-      ctx.fillText(value.toFixed(0), originX - 10, y);
-    }
-
-    // X-axis labels and grid with dynamic time steps
-    let timeStep = 1; // Default 1 second steps
-    if (duration > 25) {
-      timeStep = 5; // 5 second steps for videos longer than 25 seconds
-    } else if (duration > 10) {
-      timeStep = 2; // 2 second steps for videos longer than 10 seconds
-    }
-
-    for (let time = 0; time <= duration; time += timeStep) {
-      const x = originX + graphWidth * (time / duration);
-      if (time > 0) {
-        ctx.beginPath();
-        ctx.strokeStyle = "#e5e7eb";
-        ctx.setLineDash([4, 4]);
-        ctx.moveTo(x, originY);
-        ctx.lineTo(x, padding);
-        ctx.stroke();
+      switch (categoryId) {
+        case "impressions":
+          baseValue = 500;
+          amplitude = 400;
+          frequency = 0.5;
+          noiseFactor = 50;
+          break;
+        case "clicks":
+          baseValue = 50;
+          amplitude = 40;
+          frequency = 1.0;
+          noiseFactor = 10;
+          break;
+        case "conversions":
+          baseValue = 5;
+          amplitude = 4;
+          frequency = 0.2;
+          noiseFactor = 2;
+          break;
+        case "engagement":
+          baseValue = 100;
+          amplitude = 80;
+          frequency = 0.7;
+          noiseFactor = 20;
+          break;
+        default:
+          baseValue = 100;
+          amplitude = 50;
+          frequency = 1;
+          noiseFactor = 10;
       }
-      ctx.fillStyle = "#4b5563";
+
+      for (let i = 0; i < totalPoints; i++) {
+        const time = Math.min(i / pointsPerSecond, duration);
+        const value = Math.max(
+          0,
+          baseValue +
+            amplitude * Math.sin((time * frequency * Math.PI) / 2) +
+            (Math.random() - 0.5) * noiseFactor
+        );
+
+        data.push({
+          time: parseFloat(time.toFixed(2)),
+          value: parseFloat(value.toFixed(2)),
+        });
+
+        if (time >= duration) break;
+      }
+      return data;
+    },
+    []
+  );
+
+  const drawAxes = useCallback(
+    (
+      ctx: CanvasRenderingContext2D,
+      canvas: HTMLCanvasElement,
+      duration: number,
+      minValue: number,
+      maxValue: number
+    ) => {
+      const padding = 45;
+      const bottomPadding = 65;
+      const graphWidth = canvas.width - padding * 2;
+      const graphHeight = canvas.height - padding - bottomPadding;
+      const originX = padding;
+      const originY = canvas.height - bottomPadding;
+
+      ctx.strokeStyle = "#6b7280";
+      ctx.lineWidth = 1;
+      ctx.font = "8px Inter, sans-serif";
+      ctx.fillStyle = "#fff"; // axis text white
       ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      ctx.fillText(`${time.toFixed(0)}s`, x, originY + 10);
-    }
-    ctx.setLineDash([]);
-  }, []);
+      ctx.textBaseline = "middle";
 
-  const drawGraph = useCallback((currentVideoTime: number) => {
-    const canvas = canvasRef.current;
-    const currentValueDisplay = currentValueDisplayRef.current;
-    const timeDisplay = timeDisplayRef.current;
+      // Y-axis
+      ctx.beginPath();
+      ctx.moveTo(originX, padding);
+      ctx.lineTo(originX, originY);
+      ctx.stroke();
 
-    if (!canvas || !currentValueDisplay || !timeDisplay) return;
+      // X-axis
+      ctx.beginPath();
+      ctx.moveTo(originX, originY);
+      ctx.lineTo(originX + graphWidth, originY);
+      ctx.stroke();
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Set canvas size
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const graphDisplayDuration = videoDuration;
-    const padding = 45;
-    const bottomPadding = 65;
-    const graphWidth = canvas.width - padding * 2;
-    const graphHeight = canvas.height - padding - bottomPadding;
-    const originX = padding;
-    const originY = canvas.height - bottomPadding;
-
-    const categoriesToDraw = new Set([...activeCategories, ...Object.keys(categoryAnimationStates)]);
-    let calculatedOverallMinValue = Infinity;
-    let calculatedOverallMaxValue = -Infinity;
-    let hasActualData = false;
-
-    // Calculate min/max values
-    categoriesToDraw.forEach((categoryId) => {
-      const data = allParsedData[categoryId];
-      if (data && data.length > 0) {
-        const relevantValues = data.filter((p) => p.time <= graphDisplayDuration).map((d) => d.value);
-        if (relevantValues.length > 0) {
-          hasActualData = true;
-          calculatedOverallMinValue = Math.min(calculatedOverallMinValue, ...relevantValues);
-          calculatedOverallMaxValue = Math.max(calculatedOverallMaxValue, ...relevantValues);
-        }
-      }
-    });
-
-    if (!hasActualData || categoriesToDraw.size === 0) {
-      calculatedOverallMinValue = 0;
-      calculatedOverallMaxValue = 1000;
-    }
-
-    calculatedOverallMaxValue *= 1.1;
-    calculatedOverallMinValue = Math.max(0, calculatedOverallMinValue * 0.9);
-
-    // Handle axis animation
-    if (!axisAnimationState ||
-      axisAnimationState.endMin !== calculatedOverallMinValue ||
-      axisAnimationState.endMax !== calculatedOverallMaxValue) {
-      setAxisAnimationState({
-        startTime: performance.now(),
-        duration: AXIS_ANIMATION_DURATION,
-        startMin: currentOverallMinValue,
-        startMax: currentOverallMaxValue,
-        endMin: calculatedOverallMinValue,
-        endMax: calculatedOverallMaxValue,
-      });
-    }
-
-    let currentMin = currentOverallMinValue;
-    let currentMax = currentOverallMaxValue;
-
-    if (axisAnimationState) {
-      const elapsed = performance.now() - axisAnimationState.startTime;
-      const progress = Math.min(1, elapsed / axisAnimationState.duration);
-      currentMin = axisAnimationState.startMin + (axisAnimationState.endMin - axisAnimationState.startMin) * progress;
-      currentMax = axisAnimationState.startMax + (axisAnimationState.endMax - axisAnimationState.startMax) * progress;
-
-      setCurrentOverallMinValue(currentMin);
-      setCurrentOverallMaxValue(currentMax);
-
-      if (progress >= 1) {
-        setAxisAnimationState(null);
-      }
-    }
-
-    drawAxes(ctx, canvas, graphDisplayDuration, currentMin, currentMax);
-
-    // Draw data lines
-    categoriesToDraw.forEach((categoryId) => {
-      const category = dataCategories.find((cat) => cat.id === categoryId);
-      const data = allParsedData[categoryId];
-      if (data && category) {
+      // Y-axis labels and grid
+      const numYLabels = 5;
+      for (let i = 0; i <= numYLabels; i++) {
+        const value = minValue + (maxValue - minValue) * (i / numYLabels);
+        const y = originY - graphHeight * (i / numYLabels);
         ctx.beginPath();
-        ctx.strokeStyle = category.color;
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#505077";
+        ctx.setLineDash([4, 4]);
+        ctx.moveTo(originX, y);
+        ctx.lineTo(originX + graphWidth, y);
+        ctx.stroke();
+        ctx.fillStyle = "#fff"; // axis text white
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        ctx.fillText(value.toFixed(0), originX - 10, y);
+      }
 
-        const animation = categoryAnimationStates[categoryId];
-        let currentAnimationProgress = 1;
+      // X-axis labels and grid with dynamic time steps
+      let timeStep = 1; // Default 1 second steps
+      if (duration > 25) {
+        timeStep = 5; // 5 second steps for videos longer than 25 seconds
+      } else if (duration > 10) {
+        timeStep = 2; // 2 second steps for videos longer than 10 seconds
+      }
 
-        if (animation) {
-          const elapsed = performance.now() - animation.startTime;
-          currentAnimationProgress = Math.min(1, elapsed / animation.duration);
+      for (let time = 0; time <= duration; time += timeStep) {
+        const x = originX + graphWidth * (time / duration);
+        if (time > 0) {
+          ctx.beginPath();
+          ctx.strokeStyle = "#505077";
+          ctx.setLineDash([4, 4]);
+          ctx.moveTo(x, originY);
+          ctx.lineTo(x, padding);
+          ctx.stroke();
         }
+        ctx.fillStyle = "#fff"; // axis text white
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText(`${time.toFixed(0)}s`, x, originY + 10);
+      }
+      ctx.setLineDash([]);
+    },
+    []
+  );
 
-        data.forEach((point, index) => {
-          if (point.time <= graphDisplayDuration) {
-            const x = originX + (point.time / graphDisplayDuration) * graphWidth;
-            let y = originY - ((point.value - currentMin) / (currentMax - currentMin)) * graphHeight;
+  const drawGraph = useCallback(
+    (currentVideoTime: number) => {
+      const canvas = canvasRef.current;
+      const currentValueDisplay = currentValueDisplayRef.current;
+      const timeDisplay = timeDisplayRef.current;
 
-            if (animation) {
-              if (animation.type === "appear") {
-                y = originY - (originY - y) * currentAnimationProgress;
-              } else if (animation.type === "disappear") {
-                y = y * (1 - currentAnimationProgress) + originY * currentAnimationProgress;
+      if (!canvas || !currentValueDisplay || !timeDisplay) return;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      // Set canvas size
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Set graph background color
+      ctx.save();
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "#060B28";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+
+      const graphDisplayDuration = videoDuration;
+      const padding = 45;
+      const bottomPadding = 65;
+      const graphWidth = canvas.width - padding * 2;
+      const graphHeight = canvas.height - padding - bottomPadding;
+      const originX = padding;
+      const originY = canvas.height - bottomPadding;
+
+      const categoriesToDraw = new Set([
+        ...activeCategories,
+        ...Object.keys(categoryAnimationStates),
+      ]);
+      let calculatedOverallMinValue = Infinity;
+      let calculatedOverallMaxValue = -Infinity;
+      let hasActualData = false;
+
+      // Calculate min/max values
+      categoriesToDraw.forEach((categoryId) => {
+        const data = allParsedData[categoryId];
+        if (data && data.length > 0) {
+          const relevantValues = data
+            .filter((p) => p.time <= graphDisplayDuration)
+            .map((d) => d.value);
+          if (relevantValues.length > 0) {
+            hasActualData = true;
+            calculatedOverallMinValue = Math.min(
+              calculatedOverallMinValue,
+              ...relevantValues
+            );
+            calculatedOverallMaxValue = Math.max(
+              calculatedOverallMaxValue,
+              ...relevantValues
+            );
+          }
+        }
+      });
+
+      if (!hasActualData || categoriesToDraw.size === 0) {
+        calculatedOverallMinValue = 0;
+        calculatedOverallMaxValue = 1000;
+      }
+
+      calculatedOverallMaxValue *= 1.1;
+      calculatedOverallMinValue = Math.max(0, calculatedOverallMinValue * 0.9);
+
+      // Handle axis animation
+      if (
+        !axisAnimationState ||
+        axisAnimationState.endMin !== calculatedOverallMinValue ||
+        axisAnimationState.endMax !== calculatedOverallMaxValue
+      ) {
+        setAxisAnimationState({
+          startTime: performance.now(),
+          duration: AXIS_ANIMATION_DURATION,
+          startMin: currentOverallMinValue,
+          startMax: currentOverallMaxValue,
+          endMin: calculatedOverallMinValue,
+          endMax: calculatedOverallMaxValue,
+        });
+      }
+
+      let currentMin = currentOverallMinValue;
+      let currentMax = currentOverallMaxValue;
+
+      if (axisAnimationState) {
+        const elapsed = performance.now() - axisAnimationState.startTime;
+        const progress = Math.min(1, elapsed / axisAnimationState.duration);
+        currentMin =
+          axisAnimationState.startMin +
+          (axisAnimationState.endMin - axisAnimationState.startMin) * progress;
+        currentMax =
+          axisAnimationState.startMax +
+          (axisAnimationState.endMax - axisAnimationState.startMax) * progress;
+
+        setCurrentOverallMinValue(currentMin);
+        setCurrentOverallMaxValue(currentMax);
+
+        if (progress >= 1) {
+          setAxisAnimationState(null);
+        }
+      }
+
+      drawAxes(ctx, canvas, graphDisplayDuration, currentMin, currentMax);
+
+      // Draw data lines
+      categoriesToDraw.forEach((categoryId) => {
+        const category = dataCategories.find((cat) => cat.id === categoryId);
+        const data = allParsedData[categoryId];
+        if (data && category) {
+          ctx.beginPath();
+          ctx.strokeStyle = category.color;
+          ctx.lineWidth = 2;
+
+          const animation = categoryAnimationStates[categoryId];
+          let currentAnimationProgress = 1;
+
+          if (animation) {
+            const elapsed = performance.now() - animation.startTime;
+            currentAnimationProgress = Math.min(
+              1,
+              elapsed / animation.duration
+            );
+          }
+
+          data.forEach((point, index) => {
+            if (point.time <= graphDisplayDuration) {
+              const x =
+                originX + (point.time / graphDisplayDuration) * graphWidth;
+              let y =
+                originY -
+                ((point.value - currentMin) / (currentMax - currentMin)) *
+                  graphHeight;
+
+              if (animation) {
+                if (animation.type === "appear") {
+                  y = originY - (originY - y) * currentAnimationProgress;
+                } else if (animation.type === "disappear") {
+                  y =
+                    y * (1 - currentAnimationProgress) +
+                    originY * currentAnimationProgress;
+                }
+              }
+
+              if (index === 0 || data[index - 1].time > graphDisplayDuration) {
+                ctx.moveTo(x, y);
+              } else {
+                ctx.lineTo(x, y);
               }
             }
-
-            if (index === 0 || data[index - 1].time > graphDisplayDuration) {
-              ctx.moveTo(x, y);
-            } else {
-              ctx.lineTo(x, y);
-            }
-          }
-        });
-        ctx.stroke();
-      }
-    });
-
-    // Draw timeline indicator
-    const clampedVideoTime = Math.min(currentVideoTime, graphDisplayDuration);
-    const lineX = originX + (clampedVideoTime / graphDisplayDuration) * graphWidth;
-    ctx.beginPath();
-    ctx.strokeStyle = "#dc2626";
-    ctx.lineWidth = 3;
-    ctx.moveTo(lineX, padding);
-    ctx.lineTo(lineX, originY);
-    ctx.stroke();
-
-    // Update value display
-    let displayContent = "";
-    activeCategories.forEach((categoryId) => {
-      const category = dataCategories.find((cat) => cat.id === categoryId);
-      const data = allParsedData[categoryId];
-      if (data && category) {
-        const closestPoint = data.reduce((prev, curr) =>
-          Math.abs(curr.time - clampedVideoTime) < Math.abs(prev.time - clampedVideoTime) ? curr : prev
-        );
-        if (closestPoint) {
-          displayContent += `<span style="color: ${category.color};">${category.name}: ${closestPoint.value.toFixed(2)}</span><br>`;
+          });
+          ctx.stroke();
         }
+      });
+
+      // Draw timeline indicator
+      const clampedVideoTime = Math.min(currentVideoTime, graphDisplayDuration);
+      const lineX =
+        originX + (clampedVideoTime / graphDisplayDuration) * graphWidth;
+      ctx.beginPath();
+      ctx.strokeStyle = "#dc2626";
+      ctx.lineWidth = 3;
+      ctx.moveTo(lineX, padding);
+      ctx.lineTo(lineX, originY);
+      ctx.stroke();
+
+      // Update value display
+      let displayContent = "";
+      activeCategories.forEach((categoryId) => {
+        const category = dataCategories.find((cat) => cat.id === categoryId);
+        const data = allParsedData[categoryId];
+        if (data && category) {
+          const closestPoint = data.reduce((prev, curr) =>
+            Math.abs(curr.time - clampedVideoTime) <
+            Math.abs(prev.time - clampedVideoTime)
+              ? curr
+              : prev
+          );
+          if (closestPoint) {
+            displayContent += `<span style="color: ${category.color};">${
+              category.name
+            }: ${closestPoint.value.toFixed(2)}</span><br>`;
+          }
+        }
+      });
+
+      if (displayContent) {
+        currentValueDisplay.innerHTML = displayContent;
+        const finalX = lineX + 105;
+        const canvasRelativeY = padding + 70;
+        currentValueDisplay.style.position = "absolute";
+        currentValueDisplay.style.left = `${finalX}px`;
+        currentValueDisplay.style.top = `${canvasRelativeY}px`;
+        currentValueDisplay.style.color = "#fff";
+        currentValueDisplay.style.backgroundColor = "#060B28";
+        currentValueDisplay.style.borderColor = "#5a30ff";
+        currentValueDisplay.style.borderWidth = "1px";
+        currentValueDisplay.style.padding = "4px 8px";
+        currentValueDisplay.style.opacity = "1";
+        currentValueDisplay.style.transform = "translateY(-50%)";
+      } else {
+        currentValueDisplay.style.opacity = "0";
       }
-    });
 
-    if (displayContent) {
-      currentValueDisplay.innerHTML = displayContent;
-      const finalX = lineX + 105;
-      const canvasRelativeY = padding + 70;
-      currentValueDisplay.style.position = "absolute";
-      currentValueDisplay.style.left = `${finalX}px`;
-      currentValueDisplay.style.top = `${canvasRelativeY}px`;
-      currentValueDisplay.style.opacity = "1";
-      currentValueDisplay.style.transform = "translateY(-50%)";
-    } else {
-      currentValueDisplay.style.opacity = "0";
-    }
-
-    // Update time display
-    timeDisplay.innerHTML = `${clampedVideoTime.toFixed(2)}s`;
-    timeDisplay.style.position = "absolute";
-    timeDisplay.style.left = `${lineX + 42}px`;
-    timeDisplay.style.top = `${originY + 79}px`;
-    timeDisplay.style.opacity = "1";
-    timeDisplay.style.transform = "translateX(-50%)";
-  }, [videoDuration, activeCategories, allParsedData, categoryAnimationStates, currentOverallMinValue, currentOverallMaxValue, axisAnimationState, drawAxes]);
+      // Update time display
+      timeDisplay.innerHTML = `${clampedVideoTime.toFixed(2)}s`;
+      timeDisplay.style.position = "absolute";
+      timeDisplay.style.color = "#fff";
+      timeDisplay.style.backgroundColor = "#060B28";
+      timeDisplay.style.borderColor = "#5a30ff";
+      timeDisplay.style.borderWidth = "1px";
+      timeDisplay.style.padding = "4px 8px";
+      timeDisplay.style.left = `calc(${lineX}px + 6%)`;
+      timeDisplay.style.top = `${originY + 59}px`;
+      timeDisplay.style.opacity = "1";
+      timeDisplay.style.transform = "translateX(-50%)";
+    },
+    [
+      videoDuration,
+      activeCategories,
+      allParsedData,
+      categoryAnimationStates,
+      currentOverallMinValue,
+      currentOverallMaxValue,
+      axisAnimationState,
+      drawAxes,
+    ]
+  );
 
   // CRITICAL: Improved animation loop with proper cleanup and infinite loop prevention
   const animateGraph = useCallback(() => {
@@ -373,13 +457,13 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
     const axisAnimating = axisAnimationState !== null;
 
     // Clean up finished disappear animations only here
-    setCategoryAnimationStates(prev => {
+    setCategoryAnimationStates((prev) => {
       const now = performance.now();
       let changed = false;
       const newStates: Record<string, AnimationState> = { ...prev };
       Object.keys(prev).forEach((catId) => {
         if (
-          prev[catId].type === 'disappear' &&
+          prev[catId].type === "disappear" &&
           now - prev[catId].startTime > prev[catId].duration
         ) {
           delete newStates[catId];
@@ -390,7 +474,8 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
       return changed ? newStates : prev;
     });
 
-    const animationsActive = Object.keys(categoryAnimationStatesRef.current).length > 0;
+    const animationsActive =
+      Object.keys(categoryAnimationStatesRef.current).length > 0;
 
     drawGraph(video.currentTime);
 
@@ -407,54 +492,66 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
   }, [videoRef, axisAnimationState, isDraggingLine, drawGraph]);
 
   // Handle canvas interactions
-  const handleMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    if (!canvas || !video) return;
+  const handleMouseDown = useCallback(
+    (event: React.MouseEvent<HTMLCanvasElement>) => {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      if (!canvas || !video) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const offsetX = event.clientX - rect.left;
+      const rect = canvas.getBoundingClientRect();
+      const offsetX = event.clientX - rect.left;
 
-    const padding = 45;
-    const graphWidth = canvas.width - padding * 2;
-    const originX = padding;
-    const lineX = originX + (video.currentTime / videoDuration) * graphWidth;
+      const padding = 45;
+      const graphWidth = canvas.width - padding * 2;
+      const originX = padding;
+      const lineX = originX + (video.currentTime / videoDuration) * graphWidth;
 
-    if (Math.abs(offsetX - lineX) < LINE_DRAG_HIT_AREA_PX) {
-      setIsDraggingLine(true);
-      setWasVideoPlayingBeforeDrag(!video.paused);
-      video.pause();
-      canvas.style.cursor = "grabbing";
+      if (Math.abs(offsetX - lineX) < LINE_DRAG_HIT_AREA_PX) {
+        setIsDraggingLine(true);
+        setWasVideoPlayingBeforeDrag(!video.paused);
+        video.pause();
+        canvas.style.cursor = "grabbing";
 
-      // Start animation if not already running
-      if (animationFrameRef.current === null) {
-        animateGraph();
+        // Start animation if not already running
+        if (animationFrameRef.current === null) {
+          animateGraph();
+        }
       }
-    }
-  }, [videoRef, videoDuration, animateGraph]);
+    },
+    [videoRef, videoDuration, animateGraph]
+  );
 
-  const handleMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    if (!canvas || !video) return;
+  const handleMouseMove = useCallback(
+    (event: React.MouseEvent<HTMLCanvasElement>) => {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      if (!canvas || !video) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const offsetX = event.clientX - rect.left;
+      const rect = canvas.getBoundingClientRect();
+      const offsetX = event.clientX - rect.left;
 
-    const padding = 45;
-    const graphWidth = canvas.width - padding * 2;
-    const originX = padding;
-    const lineX = originX + (video.currentTime / videoDuration) * graphWidth;
+      const padding = 45;
+      const graphWidth = canvas.width - padding * 2;
+      const originX = padding;
+      const lineX = originX + (video.currentTime / videoDuration) * graphWidth;
 
-    if (isDraggingLine) {
-      const newX = Math.max(originX, Math.min(originX + graphWidth, offsetX));
-      const timeRatio = (newX - originX) / graphWidth;
-      const newTime = Math.max(0, Math.min(videoDuration, timeRatio * videoDuration));
-      video.currentTime = newTime;
-    } else {
-      canvas.style.cursor = Math.abs(offsetX - lineX) < LINE_DRAG_HIT_AREA_PX ? "grab" : "default";
-    }
-  }, [videoDuration, isDraggingLine]);
+      if (isDraggingLine) {
+        const newX = Math.max(originX, Math.min(originX + graphWidth, offsetX));
+        const timeRatio = (newX - originX) / graphWidth;
+        const newTime = Math.max(
+          0,
+          Math.min(videoDuration, timeRatio * videoDuration)
+        );
+        video.currentTime = newTime;
+      } else {
+        canvas.style.cursor =
+          Math.abs(offsetX - lineX) < LINE_DRAG_HIT_AREA_PX
+            ? "grab"
+            : "default";
+      }
+    },
+    [videoRef, videoDuration, isDraggingLine]
+  );
 
   const handleMouseUp = useCallback(() => {
     const canvas = canvasRef.current;
@@ -505,9 +602,11 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
     };
 
     const stopAnimation = () => {
-      if (Object.keys(categoryAnimationStates).length === 0 &&
+      if (
+        Object.keys(categoryAnimationStates).length === 0 &&
         axisAnimationState === null &&
-        !isDraggingLine) {
+        !isDraggingLine
+      ) {
         if (animationFrameRef.current !== null) {
           cancelAnimationFrame(animationFrameRef.current);
           animationFrameRef.current = null;
@@ -528,7 +627,15 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
       video.removeEventListener("pause", stopAnimation);
       video.removeEventListener("ended", stopAnimation);
     };
-  }, [videoRef, videoDuration, drawGraph, animateGraph, categoryAnimationStates, axisAnimationState, isDraggingLine]);
+  }, [
+    videoRef,
+    videoDuration,
+    drawGraph,
+    animateGraph,
+    categoryAnimationStates,
+    axisAnimationState,
+    isDraggingLine,
+  ]);
 
   // Handle window resize
   useEffect(() => {
@@ -545,45 +652,66 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
 
   // Handle category changes with animations
   useEffect(() => {
-    // Animate categories appearing/disappearing
-    setCategoryAnimationStates((prev) => {
-      const newStates: Record<string, AnimationState> = { ...prev };
-      // Categories that are now active but weren't before: appear
-      activeCategories.forEach((catId) => {
-        if (!prev[catId]) {
-          newStates[catId] = {
-            startTime: performance.now(),
-            duration: 400,
-            type: 'appear',
-          };
-        }
+    console.log(
+      "[DataGraph.tsx] activeCategories prop changed:",
+      activeCategories
+    );
+    const prev = prevActiveCategoriesRef.current;
+    if (prev) {
+      setCategoryAnimationStates((prevAnims) => {
+        const newAnims = { ...prevAnims };
+
+        // Find newly added categories
+        activeCategories.forEach((catId) => {
+          if (!prev.includes(catId)) {
+            console.log(
+              `[DataGraph.tsx] Scheduling APPEAR animation for ${catId}`
+            );
+            newAnims[catId] = {
+              startTime: performance.now(),
+              duration: 400,
+              type: "appear",
+            };
+          }
+        });
+
+        // Find removed categories
+        prev.forEach((catId) => {
+          if (!activeCategories.includes(catId)) {
+            console.log(
+              `[DataGraph.tsx] Scheduling DISAPPEAR animation for ${catId}`
+            );
+            newAnims[catId] = {
+              startTime: performance.now(),
+              duration: 400,
+              type: "disappear",
+            };
+          }
+        });
+
+        console.log("[DataGraph.tsx] New animation states:", newAnims);
+        return newAnims;
       });
-      // Categories that were active but are now gone: disappear
-      Object.keys(prev).forEach((catId) => {
-        if (!activeCategories.includes(catId) && prev[catId].type !== 'disappear') {
-          newStates[catId] = {
-            startTime: performance.now(),
-            duration: 400,
-            type: 'disappear',
-          };
-        }
-      });
-      return newStates;
-    });
-    // Start animation if not already running
+    }
+
+    prevActiveCategoriesRef.current = activeCategories;
+
     if (animationFrameRef.current === null) {
       animateGraph();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCategories]);
 
   // CRITICAL: Cleanup on unmount to prevent memory leaks
   useEffect(() => {
+    prevActiveCategoriesRef.current = activeCategories; // Initialize on mount
     return () => {
       if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle global mouse events for dragging
@@ -596,25 +724,26 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
 
   const handleScreenshot = () => {
     // This will be handled by the screenshot component
-    const event = new CustomEvent('take-screenshot');
+    const event = new CustomEvent("take-screenshot");
     window.dispatchEvent(event);
   };
 
   return (
-    <div className="relative w-full bg-white rounded-xl shadow-xl p-5">
+    <div className="relative w-full bg-panelBackground rounded-xl shadow-xl px-12 py-10">
       <div className="w-full flex flex-row justify-between items-center mb-4">
-        <h3 className="text-2xl font-bold text-gray-800">Video Data Trends</h3>
+        <h3 className="text-[14px] font-bold text-white pl-12">
+          Video Data Trends
+        </h3>
         <button
-          onClick={handleScreenshot}
-          className="px-3 py-1 bg-transparent border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+          className={`bg-gradient-to-r from-[#582CFF] to-[#351A99] py-10 px-30 rounded-xl border border-borderBlue text-[10px] cursor-pointer`}
         >
           Screenshot
         </button>
       </div>
       <canvas
         ref={canvasRef}
-        className="w-full block border border-gray-200 rounded-lg bg-gray-50"
-        style={{ height: '350px' }}
+        className="w-full block rounded-lg "
+        style={{ height: "350px" }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
       />

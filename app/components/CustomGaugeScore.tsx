@@ -3,23 +3,25 @@
 import React from 'react';
 import SmileIcon from './icons/SmileIcon';
 
-interface CustomGaugeProps {
+interface CustomGaugeScoreProps {
   value: number; // 0-1 range
   color: string;
   size?: number;
   strokeWidth?: number;
   label?: string;
   displayValue?: string;
+  version?: 'small' | 'large';
 }
 
-export default function CustomGauge({ 
+export default function CustomGaugeScore({ 
   value, 
   color, 
   size = 120, 
   strokeWidth = 8, 
   label = '', 
-  displayValue = '' 
-}: CustomGaugeProps) {
+  displayValue = '',
+  version = 'large'
+}: CustomGaugeScoreProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = circumference;
@@ -58,10 +60,9 @@ export default function CustomGauge({
           />
         </svg>
         {/* Center text */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className='bg-[#4CFF2C] rounded-full size-65 p-4'>
-            <SmileIcon className="text-black size-full" />
-          </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <h3 className={` ${version === "small" ? "text-[25px]/[100%]" : "text-[50px]/[100%]"} font-bold`}>{displayValue}</h3>
+          <p className={`text-gray-400 ${version === "small" ? "text-[9px] mt-2" : "text-[14px]"} px-16 text-center`}>{label}</p>
         </div>
       </div>
     </div>

@@ -9,7 +9,7 @@
 }
 
 @theme {
-  --color-panelBackground: #060B28BD;
+  --color-panelBackground: #060B28;
   --color-borderBlue: #351A99;
 }
 
@@ -96,10 +96,15 @@ body {
 /* Fix for screenshot container to prevent gray areas */
 #video-data-container {
   box-sizing: border-box;
-  background: #f3f4f6;
+  background: #060B28;
 }
 
 /* Ensure data display section doesn't cause layout issues */
+/* Graph axis text color */
+.graph-axis, .graph-axis text, .graph-x-axis, .graph-y-axis, .graph-x-axis text, .graph-y-axis text {
+  fill: #fff !important;
+  color: #fff !important;
+}
 #dataDisplaySection {
   box-sizing: border-box;
   width: 100%;

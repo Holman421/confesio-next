@@ -1,6 +1,7 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
+import ThreeDotsIcon from "./icons/ThreeDotsIcon";
 
 interface DataCategory {
   id: string;
@@ -9,76 +10,97 @@ interface DataCategory {
 }
 
 interface VideoControlsProps {
-  videoRef: React.RefObject<HTMLVideoElement | null>; // Kept for compatibility, but not used
+  videoRef: React.RefObject<HTMLVideoElement | null>;
   activeCategories: string[];
   onCategoryToggle: (categoryId: string, active: boolean) => void;
+  onPlay?: () => void;
+  onPause?: () => void;
 }
 
 const dataCategories: DataCategory[] = [
-  { id: "impressions", name: "Impressions", color: "#3b82f6" },
-  { id: "clicks", name: "Clicks", color: "#10b981" },
-  { id: "conversions", name: "Conversions", color: "#ef4444" },
-  { id: "engagement", name: "Engagement", color: "#f59e0b" },
+  { id: "impressions", name: "TEMP Skin Temperature", color: "#3b82f6" },
+  { id: "clicks", name: "EEG Brain Activity", color: "#10b981" },
+  { id: "conversions", name: "GSR Skin Conductance", color: "#ef4444" },
+  { id: "engagement", name: "RSP Respiration", color: "#f59e0b" },
 ];
 
-
-export default function VideoControls({ videoRef, activeCategories, onCategoryToggle }: VideoControlsProps) {
-  const handleReset = () => {
-    // Reset all categories to active
-    dataCategories.forEach((category) => {
-      if (!activeCategories.includes(category.id)) {
-        onCategoryToggle(category.id, true);
-      }
-    });
-  };
-
+export default function VideoControls({
+  videoRef,
+  activeCategories,
+  onCategoryToggle,
+  onPlay,
+  onPause,
+}: VideoControlsProps) {
+  React.useEffect(() => {
+    const video = videoRef?.current;
+    if (!video) return;
+    const handlePlay = () => { if (onPlay) onPlay(); };
+    const handlePause = () => { if (onPause) onPause(); };
+    video.addEventListener("play", handlePlay);
+    video.addEventListener("pause", handlePause);
+    return () => {
+      video.removeEventListener("play", handlePlay);
+      video.removeEventListener("pause", handlePause);
+    };
+  }, [videoRef, onPlay, onPause]);
   const handleCategoryChange = (categoryId: string, checked: boolean) => {
+    console.log(
+      `[VideoControls.tsx] Checkbox changed for ${categoryId}. Checked: ${checked}`
+    );
     onCategoryToggle(categoryId, checked);
   };
 
   return (
-    <div className="bg-panelBackground rounded-xl shadow-xl p-5 w-full max-w-xs flex flex-col gap-4 mt-5 lg:mt-0 flex-shrink-0">
-      <h2 className="text-xl font-bold text-gray-800 mb-2">Data Categories</h2>
-      <div id="categoryCheckboxes" className="flex flex-col gap-3">
+    <div className="bg-panelBackground rounded-xl border border-borderBlue p-16 flex flex-col gap-4 mt-5 lg:mt-0 flex-shrink-0">
+      <div className="flex justify-between items-center gap-24">
+        <h3 className="text-[18px] font-bold">Data categories</h3>
+        <div className="size-38 rounded-xl bg-white/10 flex items-center justify-center">
+          <ThreeDotsIcon className="text-[#7551FF] size-16" />
+        </div>
+      </div>
+      <div id="categoryCheckboxes" className="flex flex-col gap-16">
         {dataCategories.map((category) => (
-          <div key={category.id} className="flex items-center gap-3 cursor-pointer text-base font-semibold text-gray-800">
-            <input
-              type="checkbox"
-              id={`category-${category.id}`}
-              value={category.id}
-              checked={activeCategories.includes(category.id)}
-              onChange={(e) => handleCategoryChange(category.id, e.target.checked)}
-              className={`w-6 h-6 rounded border-2 cursor-pointer transition-colors duration-200 shadow-lg
-                ${activeCategories.includes(category.id)
-                  ? 'bg-white border-[3px] border-black ring-2 ring-offset-2 ring-black'
-                  : 'bg-gray-200 border-gray-400'}
-              `}
-              style={{
-                accentColor: category.color,
-                boxShadow: `0 0 0 2px ${category.color}55`,
-                outline: activeCategories.includes(category.id) ? `2px solid ${category.color}` : undefined,
-                backgroundColor: activeCategories.includes(category.id) ? category.color : '#f3f4f6',
-                borderColor: activeCategories.includes(category.id) ? '#000' : '#9ca3af',
-              }}
-            />
+          <div
+            key={category.id}
+            className="flex items-center gap-3 cursor-pointer text-base text-gray-800"
+          >
             <label
               htmlFor={`category-${category.id}`}
-              className="cursor-pointer select-none text-lg font-bold"
-              style={{ color: category.color, textShadow: `0 1px 4px #fff8` }}
+              className="flex items-center gap-3 cursor-pointer select-none text-lg text-white"
             >
-              {category.name}
+              <input
+                type="checkbox"
+                id={`category-${category.id}`}
+                value={category.id}
+                checked={activeCategories.includes(category.id)}
+                onChange={(e) =>
+                  handleCategoryChange(category.id, e.target.checked)
+                }
+                className="sr-only peer"
+              />
+              <span
+                className={`relative w-24 h-14 flex items-center rounded-full transition-colors duration-300
+                  ${
+                    activeCategories.includes(category.id)
+                      ? "bg-[#582CFF]"
+                      : "bg-black"
+                  }
+                `}
+              >
+                <span
+                  className={`absolute left-2 top-2 w-10 h-10 bg-white rounded-full transition-all duration-300
+                    ${
+                      activeCategories.includes(category.id)
+                        ? "translate-x-12"
+                        : "translate-x-0"
+                    }
+                  `}
+                />
+              </span>
+              <span className="ml-6 text-[14px]/[150%]">{category.name}</span>
             </label>
           </div>
         ))}
-      </div>
-
-      <div className="flex flex-col sm:flex-row justify-center gap-4 mt-4">
-        <button
-          onClick={handleReset}
-          className="px-4 py-2 bg-gray-500 text-white rounded-lg shadow-md hover:bg-gray-600 transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 text-center text-lg font-semibold"
-        >
-          Reset
-        </button>
       </div>
     </div>
   );

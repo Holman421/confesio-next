@@ -10,7 +10,7 @@ interface VideoPlayerProps {
 const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
   ({ videoSrc = "/videos/sample-video.mp4", className = "" }, ref) => {
     return (
-      <div id="video-data-container" className="w-full ">
+      <div id="video-data-container" className="w-[100%] bg-panelBackground! rounded-xl border border-borderBlue">
         <div className="w-full rounded-xl overflow-hidden mb-5">
           <video
             ref={ref}
@@ -27,7 +27,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
         {/* Data display section (hidden by default) */}
         <div
           id="dataDisplaySection"
-          className="w-full bg-white rounded-xl mb-5 transition-all duration-300 ease-in-out"
+          className="w-full  rounded-xl mb-5 transition-all duration-300 ease-in-out"
           style={{ display: 'none' }}
         >
           <div className="p-5">
