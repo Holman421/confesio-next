@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useCallback } from "react";
 import LoginForm from "./components/LoginForm";
+import ScreenshotHandler from "./components/ScreenshotHandler";
 import VideoPlayer from "./components/VideoPlayer";
 import DataGraph from "./components/DataGraph";
 import VideoControls from "./components/VideoControls";
@@ -58,6 +59,7 @@ export default function VideoDataVisualizer() {
 
   return (
     <>
+      <ScreenshotHandler videoRef={videoRef} activeCategories={activeCategories} />
       <div className="font-sans h-screen px-48 py-16 flex gap-16">
         <Image
           src="/images/background.jpg"
@@ -70,7 +72,7 @@ export default function VideoDataVisualizer() {
         <div className="w-full flex flex-col gap-16 justify-between">
           <TopStatsPanel />
           <div className="flex gap-16">
-            <div className="flex flex-col gap-16 flex-10">
+            <div id="screenshot-panel" className="flex flex-col gap-16 flex-10">
               <VideoPlayer ref={videoRef} />
               <DataGraph
                 videoRef={videoRef}

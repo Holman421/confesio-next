@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React, { useRef, useEffect, useState, useCallback } from "react";
 
 // ... (interfaces remain the same) ...
@@ -37,14 +38,17 @@ interface DataGraphProps {
 }
 
 const dataCategories: DataCategory[] = [
-  { id: "impressions", name: "Impressions", color: "#3b82f6" },
-  { id: "clicks", name: "Clicks", color: "#10b981" },
-  { id: "conversions", name: "Conversions", color: "#ef4444" },
-  { id: "engagement", name: "Engagement", color: "#f59e0b" },
+  { id: "impressions", name: "TEMP", color: "#3b82f6" },
+  { id: "clicks", name: "EEG", color: "#10b981" },
+  { id: "conversions", name: "GSR", color: "#ef4444" },
+  { id: "engagement", name: "RSP", color: "#f59e0b" },
 ];
 
 const AXIS_ANIMATION_DURATION = 500;
 const LINE_DRAG_HIT_AREA_PX = 10;
+
+// Toggle this to disable drawing the 4 data value rows
+const DRAW_DATA_VALUE_ROWS = false;
 
 export default function DataGraph({
   videoRef,
@@ -324,55 +328,57 @@ export default function DataGraph({
 
       drawAxes(ctx, canvas, graphDisplayDuration, currentMin, currentMax);
 
-      // Draw data lines
-      categoriesToDraw.forEach((categoryId) => {
-        const category = dataCategories.find((cat) => cat.id === categoryId);
-        const data = allParsedData[categoryId];
-        if (data && category) {
-          ctx.beginPath();
-          ctx.strokeStyle = category.color;
-          ctx.lineWidth = 2;
+      // Draw data lines (disabled if DRAW_DATA_VALUE_ROWS is false)
+      if (DRAW_DATA_VALUE_ROWS) {
+        categoriesToDraw.forEach((categoryId) => {
+          const category = dataCategories.find((cat) => cat.id === categoryId);
+          const data = allParsedData[categoryId];
+          if (data && category) {
+            ctx.beginPath();
+            ctx.strokeStyle = category.color;
+            ctx.lineWidth = 2;
 
-          const animation = categoryAnimationStates[categoryId];
-          let currentAnimationProgress = 1;
+            const animation = categoryAnimationStates[categoryId];
+            let currentAnimationProgress = 1;
 
-          if (animation) {
-            const elapsed = performance.now() - animation.startTime;
-            currentAnimationProgress = Math.min(
-              1,
-              elapsed / animation.duration
-            );
-          }
+            if (animation) {
+              const elapsed = performance.now() - animation.startTime;
+              currentAnimationProgress = Math.min(
+                1,
+                elapsed / animation.duration
+              );
+            }
 
-          data.forEach((point, index) => {
-            if (point.time <= graphDisplayDuration) {
-              const x =
-                originX + (point.time / graphDisplayDuration) * graphWidth;
-              let y =
-                originY -
-                ((point.value - currentMin) / (currentMax - currentMin)) *
-                  graphHeight;
+            data.forEach((point, index) => {
+              if (point.time <= graphDisplayDuration) {
+                const x =
+                  originX + (point.time / graphDisplayDuration) * graphWidth;
+                let y =
+                  originY -
+                  ((point.value - currentMin) / (currentMax - currentMin)) *
+                    graphHeight;
 
-              if (animation) {
-                if (animation.type === "appear") {
-                  y = originY - (originY - y) * currentAnimationProgress;
-                } else if (animation.type === "disappear") {
-                  y =
-                    y * (1 - currentAnimationProgress) +
-                    originY * currentAnimationProgress;
+                if (animation) {
+                  if (animation.type === "appear") {
+                    y = originY - (originY - y) * currentAnimationProgress;
+                  } else if (animation.type === "disappear") {
+                    y =
+                      y * (1 - currentAnimationProgress) +
+                      originY * currentAnimationProgress;
+                  }
+                }
+
+                if (index === 0 || data[index - 1].time > graphDisplayDuration) {
+                  ctx.moveTo(x, y);
+                } else {
+                  ctx.lineTo(x, y);
                 }
               }
-
-              if (index === 0 || data[index - 1].time > graphDisplayDuration) {
-                ctx.moveTo(x, y);
-              } else {
-                ctx.lineTo(x, y);
-              }
-            }
-          });
-          ctx.stroke();
-        }
-      });
+            });
+            ctx.stroke();
+          }
+        });
+      }
 
       // Draw timeline indicator
       const clampedVideoTime = Math.min(currentVideoTime, graphDisplayDuration);
@@ -735,7 +741,8 @@ export default function DataGraph({
           Video Data Trends
         </h3>
         <button
-          className={`bg-gradient-to-r from-[#582CFF] to-[#351A99] py-10 px-30 rounded-xl border border-borderBlue text-[10px] cursor-pointer`}
+          onClick={handleScreenshot}
+          className={`bg-gradient-to-r from-[#582CFF] to-[#351A99] py-10 px-30 rounded-xl border border-borderBlue text-[16px] cursor-pointer`}
         >
           Screenshot
         </button>
@@ -755,6 +762,29 @@ export default function DataGraph({
         ref={timeDisplayRef}
         className="absolute opacity-0 transition-opacity duration-200 pointer-events-none text-xs text-gray-800 font-medium px-2 py-1 bg-white/90 rounded-md shadow-md z-20 left-1/2 transform -translate-x-1/2"
       />
+      <div className="absolute w-full h-auto bottom-[60%] left-[8%]">
+        <Image
+          src="/images/vector-1.png"
+          alt="Description of image"
+          width={1000}
+          height={1000}
+          className="w-full h-auto absolute object-cover scale-x-[0.835] origin-left"
+        />
+        <Image
+          src="/images/vector-2.png"
+          alt="Description of image"
+          width={1000}
+          height={1000}
+          className="w-full h-auto absolute object-cover scale-x-[0.835] origin-left"
+        />
+        <Image
+          src="/images/vector-3.png"
+          alt="Description of image"
+          width={1000}
+          height={1000}
+          className="w-full h-auto absolute object-cover scale-x-[0.835] origin-left"
+        />
+      </div>
     </div>
   );
 }
