@@ -7,7 +7,7 @@ import SettingsIcon from "./icons/SettingsIcon";
 
 const BottomPanel = () => {
   return (
-    <div className="bg-panelBackground rounded-xl h-auto p-16 flex justify-between">
+    <div className="bg-panelBackground rounded-xl h-auto border border-borderBlue p-16 flex justify-between">
       <div className="flex items-center gap-16">
         <div className="h-full aspect-square bg-gradient-to-t from-[#7F98FF] rounded-md  to-[#9764FC] relative">
           <Image

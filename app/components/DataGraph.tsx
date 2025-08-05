@@ -738,7 +738,7 @@ export default function DataGraph({
   };
 
   return (
-    <div className="relative w-full bg-panelBackground rounded-xl shadow-xl px-12 py-10">
+    <div className="relative w-full bg-panelBackground rounded-xl border border-borderBlue px-12 py-10">
       <div
         id="screenshot-hide"
         className="w-full flex flex-row justify-between items-center mb-4"
