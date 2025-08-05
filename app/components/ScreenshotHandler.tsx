@@ -260,8 +260,8 @@ export default function ScreenshotHandler({
     // Load html2canvas-pro dynamically
     const loadHtml2Canvas = async () => {
       try {
-        const module = await import("html2canvas-pro");
-        html2canvas = module.default || module;
+        const imported = await import("html2canvas-pro");
+        html2canvas = imported.default || imported;
       } catch (error) {
         console.error("Failed to load html2canvas-pro:", error);
       }
