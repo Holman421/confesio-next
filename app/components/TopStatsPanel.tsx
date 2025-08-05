@@ -8,25 +8,25 @@ const TopStatsPanel = () => {
                 title="Attention on brand"
                 originalPercentage={10}
                 newPercentage={20}
-                iconType={1}
+                iconType={"lightbulb"}
             />
             <TopStat
                 title="Focus"
                 originalPercentage={30}
                 newPercentage={40}
-                iconType={2}
+                iconType={"eye"}
             />
             <TopStat
                 title="Memory"
                 originalPercentage={50}
                 newPercentage={-60}
-                iconType={3}
+                iconType={"brain"}
             />
             <TopStat
                 title="Cognitive demand"
                 originalPercentage={70}
                 newPercentage={80}
-                iconType={4}
+                iconType={"head"}
             />
         </div>
     )

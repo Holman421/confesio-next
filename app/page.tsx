@@ -66,6 +66,7 @@ export default function VideoDataVisualizer() {
             <DataGraph
               videoRef={videoRef}
               activeCategories={activeCategories}
+              onCategoryToggle={handleCategoryToggle}
             />
             <VideoControls
               videoRef={videoRef}

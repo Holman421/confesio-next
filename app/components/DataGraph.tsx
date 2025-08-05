@@ -53,6 +53,10 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
   const [videoDuration, setVideoDuration] = useState(30);
   const [allParsedData, setAllParsedData] = useState<Record<string, DataPoint[]>>({});
   const [categoryAnimationStates, setCategoryAnimationStates] = useState<Record<string, AnimationState>>({});
+  const categoryAnimationStatesRef = useRef(categoryAnimationStates);
+  useEffect(() => {
+    categoryAnimationStatesRef.current = categoryAnimationStates;
+  }, [categoryAnimationStates]);
   const [currentOverallMinValue, setCurrentOverallMinValue] = useState(0);
   const [currentOverallMaxValue, setCurrentOverallMaxValue] = useState(1000);
   const [axisAnimationState, setAxisAnimationState] = useState<AxisAnimationState | null>(null);
@@ -287,13 +291,6 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
         if (animation) {
           const elapsed = performance.now() - animation.startTime;
           currentAnimationProgress = Math.min(1, elapsed / animation.duration);
-          if (currentAnimationProgress >= 1) {
-            setCategoryAnimationStates(prev => {
-              const newStates = { ...prev };
-              delete newStates[categoryId];
-              return newStates;
-            });
-          }
         }
 
         data.forEach((point, index) => {
@@ -373,8 +370,27 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
     if (!video) return;
 
     const videoPlaying = !video.paused && !video.ended;
-    const animationsActive = Object.keys(categoryAnimationStates).length > 0;
     const axisAnimating = axisAnimationState !== null;
+
+    // Clean up finished disappear animations only here
+    setCategoryAnimationStates(prev => {
+      const now = performance.now();
+      let changed = false;
+      const newStates: Record<string, AnimationState> = { ...prev };
+      Object.keys(prev).forEach((catId) => {
+        if (
+          prev[catId].type === 'disappear' &&
+          now - prev[catId].startTime > prev[catId].duration
+        ) {
+          delete newStates[catId];
+          changed = true;
+        }
+      });
+      categoryAnimationStatesRef.current = newStates;
+      return changed ? newStates : prev;
+    });
+
+    const animationsActive = Object.keys(categoryAnimationStatesRef.current).length > 0;
 
     drawGraph(video.currentTime);
 
@@ -388,7 +404,7 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
     if (videoPlaying || animationsActive || axisAnimating || isDraggingLine) {
       animationFrameRef.current = requestAnimationFrame(animateGraph);
     }
-  }, [videoRef, categoryAnimationStates, axisAnimationState, isDraggingLine, drawGraph]);
+  }, [videoRef, axisAnimationState, isDraggingLine, drawGraph]);
 
   // Handle canvas interactions
   const handleMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -529,8 +545,35 @@ export default function DataGraph({ videoRef, activeCategories }: DataGraphProps
 
   // Handle category changes with animations
   useEffect(() => {
-    // This will be used to trigger category animations when activeCategories changes
-    // For now, we'll implement a simple version without complex animations
+    // Animate categories appearing/disappearing
+    setCategoryAnimationStates((prev) => {
+      const newStates: Record<string, AnimationState> = { ...prev };
+      // Categories that are now active but weren't before: appear
+      activeCategories.forEach((catId) => {
+        if (!prev[catId]) {
+          newStates[catId] = {
+            startTime: performance.now(),
+            duration: 400,
+            type: 'appear',
+          };
+        }
+      });
+      // Categories that were active but are now gone: disappear
+      Object.keys(prev).forEach((catId) => {
+        if (!activeCategories.includes(catId) && prev[catId].type !== 'disappear') {
+          newStates[catId] = {
+            startTime: performance.now(),
+            duration: 400,
+            type: 'disappear',
+          };
+        }
+      });
+      return newStates;
+    });
+    // Start animation if not already running
+    if (animationFrameRef.current === null) {
+      animateGraph();
+    }
   }, [activeCategories]);
 
   // CRITICAL: Cleanup on unmount to prevent memory leaks
