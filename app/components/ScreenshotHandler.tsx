@@ -21,7 +21,19 @@ const dataCategories: DataCategory[] = [
 ];
 
 // Dynamic import for html2canvas-pro
-let html2canvas: any = null;
+let html2canvas: ((element: HTMLElement, options?: Html2CanvasOptions) => Promise<HTMLCanvasElement>) | null = null;
+
+interface Html2CanvasOptions {
+  allowTaint?: boolean;
+  useCORS?: boolean;
+  scale?: number;
+  backgroundColor?: string | null;
+  logging?: boolean;
+  width?: number;
+  height?: number;
+  scrollX?: number;
+  scrollY?: number;
+}
 
 export default function ScreenshotHandler({ videoRef, activeCategories }: ScreenshotHandlerProps) {
   

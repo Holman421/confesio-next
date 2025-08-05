@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import ThreeDotsIcon from "./icons/ThreeDotsIcon";
 import CustomGaugeScore from "./CustomGaugeScore";
@@ -50,19 +49,22 @@ const SatisfactionPanel: React.FC<SatisfactionPanelProps> = ({ isPlaying }) => {
         setGauges((prev) =>
           prev.map((g, i) => {
             // Randomly increase or decrease value (larger delta)
-            let delta = (Math.random() - 0.5) * 0.15; // -0.075 to +0.075
-            let newValue = Math.max(0, Math.min(1, parseFloat(g.value.toString()) + delta));
+            const delta = (Math.random() - 0.5) * 0.15; // -0.075 to +0.075
+            const newValue = Math.max(
+              0,
+              Math.min(1, parseFloat(g.value.toString()) + delta)
+            );
             let displayValue: string;
             if (g.label === "Engagement") {
               // Engagement display value is large
-              let base = parseFloat(g.displayValue);
-              let d = (Math.random() - 0.5) * 15; // -7.5 to +7.5
-              let newDisplay = Math.max(100, base + d).toFixed(1);
+              const base = parseFloat(g.displayValue);
+              const d = (Math.random() - 0.5) * 15; // -7.5 to +7.5
+              const newDisplay = Math.max(100, base + d).toFixed(1);
               displayValue = newDisplay;
             } else {
-              let base = parseFloat(g.displayValue);
-              let d = (Math.random() - 0.5) * 0.7; // -0.35 to +0.35
-              let newDisplay = Math.max(0, base + d).toFixed(1);
+              const base = parseFloat(g.displayValue);
+              const d = (Math.random() - 0.5) * 0.7; // -0.35 to +0.35
+              const newDisplay = Math.max(0, base + d).toFixed(1);
               displayValue = newDisplay;
             }
             return {
@@ -96,23 +98,23 @@ const SatisfactionPanel: React.FC<SatisfactionPanelProps> = ({ isPlaying }) => {
     if (isPlaying) {
       interval = setInterval(() => {
         setEeg((prev) => {
-          let d = (Math.random() - 0.5) * 8; // -4 to +4
-          let next = Math.max(120, Math.min(170, prev + d));
+          const d = (Math.random() - 0.5) * 8; // -4 to +4
+          const next = Math.max(120, Math.min(170, prev + d));
           return parseFloat(next.toFixed(1));
         });
         setGsr((prev) => {
-          let d = (Math.random() - 0.5) * 6; // -3 to +3
-          let next = Math.max(55, Math.min(70, prev + d));
+          const d = (Math.random() - 0.5) * 6; // -3 to +3
+          const next = Math.max(55, Math.min(70, prev + d));
           return parseFloat(next.toFixed(2));
         });
         setRsp((prev) => {
-          let d = (Math.random() - 0.5) * 0.25; // -0.125 to +0.125
-          let next = Math.max(2.1, Math.min(2.7, prev + d));
+          const d = (Math.random() - 0.5) * 0.25; // -0.125 to +0.125
+          const next = Math.max(2.1, Math.min(2.7, prev + d));
           return parseFloat(next.toFixed(3));
         });
         setTemp((prev) => {
-          let d = (Math.random() - 0.5) * 0.4; // -0.2 to +0.2
-          let next = Math.max(35.8, Math.min(37.2, prev + d));
+          const d = (Math.random() - 0.5) * 0.4; // -0.2 to +0.2
+          const next = Math.max(35.8, Math.min(37.2, prev + d));
           return parseFloat(next.toFixed(1));
         });
       }, 600);

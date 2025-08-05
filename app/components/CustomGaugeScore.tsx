@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import SmileIcon from './icons/SmileIcon';
 
 interface CustomGaugeScoreProps {
   value: number; // 0-1 range

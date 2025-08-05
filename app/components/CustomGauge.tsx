@@ -17,8 +17,6 @@ export default function CustomGauge({
   color, 
   size = 120, 
   strokeWidth = 8, 
-  label = '', 
-  displayValue = '' 
 }: CustomGaugeProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
